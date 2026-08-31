@@ -30,17 +30,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configurar Node.js
-        uses: actions/setup-node@v4
+      - name: Configurar Bun
+        uses: oven-sh/setup-bun@v1
         with:
-          node-version: 20
-          cache: 'npm'
+          bun-version: latest
 
       - name: Instalar dependências
-        run: npm install
+        run: bun install
 
       - name: Compilar (Build)
-        run: npm run build
+        run: bun run build
 
       - name: Configurar Páginas
         uses: actions/configure-pages@v4
