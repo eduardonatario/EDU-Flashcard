@@ -117,7 +117,12 @@ export const InteractivePlayer: React.FC<InteractivePlayerProps> = ({
   // Container width based on card size
   const getContainerWidthClass = () => {
     if (isSingleLarge) return 'max-w-6xl';
-    if (cardSize === 'small') return 'max-w-7xl';
+    if (cardSize === 'small') {
+      if (cards.length === 1) return 'max-w-xs';
+      if (cards.length === 2) return 'max-w-xl';
+      if (cards.length === 3) return 'max-w-4xl';
+      return 'max-w-6xl';
+    }
     if (cardSize === 'large') return 'max-w-5xl';
     return 'max-w-5xl';
   };
@@ -125,15 +130,15 @@ export const InteractivePlayer: React.FC<InteractivePlayerProps> = ({
   // Grid columns based on card size and count
   const getGridColsClass = () => {
     if (cards.length === 1) {
-      if (cardSize === 'small') return 'grid-cols-1 max-w-xs mx-auto';
+      if (cardSize === 'small') return 'grid-cols-1 max-w-[280px] mx-auto';
       if (cardSize === 'large') return 'grid-cols-1 w-full max-w-5xl mx-auto';
       return 'grid-cols-1 max-w-sm mx-auto';
     }
 
     if (cardSize === 'small') {
-      if (cards.length === 2) return 'grid-cols-1 sm:grid-cols-2 max-w-xl mx-auto';
-      if (cards.length === 3) return 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 max-w-4xl mx-auto';
-      return 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4';
+      if (cards.length === 2) return 'grid-cols-1 sm:grid-cols-2 max-w-[580px] mx-auto';
+      if (cards.length === 3) return 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 max-w-[880px] mx-auto';
+      return 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 max-w-[1180px] mx-auto';
     }
 
     if (cardSize === 'large') {
@@ -146,9 +151,9 @@ export const InteractivePlayer: React.FC<InteractivePlayerProps> = ({
   };
 
   return (
-    <div className={`w-full ${getContainerWidthClass()} mx-auto px-4 py-8 sm:px-6`}>
+    <div className={`w-full ${getContainerWidthClass()} mx-auto px-4 py-8 sm:px-6 flex flex-col items-center justify-center`}>
       {/* GRID DISPLAY OF CARDS */}
-      <div className={`grid ${getGridGapClass()} ${getGridColsClass()} justify-center`}>
+      <div className={`grid ${getGridGapClass()} ${getGridColsClass()} w-full justify-center justify-items-center`}>
         {cards.map((card) => {
           const isFlipped = !!flippedCards[card.id];
 

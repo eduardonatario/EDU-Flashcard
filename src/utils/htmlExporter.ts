@@ -163,6 +163,11 @@ export function generateStandaloneHTML(deck: Deck): string {
       gap: 24px;
       width: 100%;
       justify-content: center;
+      justify-items: center;
+    }
+
+    .fc-size-small .fc-grid {
+      gap: 12px;
     }
 
     .fc-grid-1 {
@@ -171,10 +176,17 @@ export function generateStandaloneHTML(deck: Deck): string {
       margin: 0 auto;
     }
 
+    .fc-size-small .fc-grid-1 {
+      max-width: 290px;
+    }
+
     .fc-grid-2 {
       grid-template-columns: minmax(0, 1fr);
       max-width: 860px;
       margin: 0 auto;
+    }
+    .fc-size-small .fc-grid-2 {
+      max-width: 600px;
     }
     @media (min-width: 640px) {
       .fc-grid-2 {
@@ -186,6 +198,9 @@ export function generateStandaloneHTML(deck: Deck): string {
       grid-template-columns: minmax(0, 1fr);
       max-width: 1100px;
       margin: 0 auto;
+    }
+    .fc-size-small .fc-grid-3 {
+      max-width: 900px;
     }
     @media (min-width: 640px) {
       .fc-grid-3 {
@@ -202,6 +217,9 @@ export function generateStandaloneHTML(deck: Deck): string {
       grid-template-columns: minmax(0, 1fr);
       max-width: 1200px;
       margin: 0 auto;
+    }
+    .fc-size-small .fc-grid-4 {
+      max-width: 1180px;
     }
     @media (min-width: 480px) {
       .fc-grid-4 {
