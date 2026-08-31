@@ -1,0 +1,6 @@
+{
+  "name": "Flashcard",
+  "description": "Aplicativo web para criação e visualização de flashcards com animação 3D de giro e exportação HTML independente.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
