@@ -17,6 +17,7 @@ export interface Flashcard {
 
 export type ViewMode = 'player' | 'editor';
 export type PlayerLayout = 'carousel' | 'grid';
+export type CardSize = 'small' | 'medium' | 'large';
 export type CardTheme = 'sleek-orange' | 'rise-blue' | 'slate-corporate' | 'emerald-green' | 'indigo-modern' | 'amber-warm' | 'rose-accent' | 'dark-elegance';
 
 export interface DeckThemeConfig {
@@ -40,11 +41,15 @@ export interface Deck {
   updatedAt: string;
   theme: CardTheme;
   defaultLayout: PlayerLayout;
-  cardAspectRatio?: 'vertical' | 'square';
+  cardAspectRatio?: 'vertical' | 'square' | 'horizontal';
+  cardSize?: CardSize;
   showProgressBar: boolean;
   enableSound: boolean;
   flipPromptText: string;
   backPromptText: string;
+  frontBgType?: 'white' | 'light-gray' | 'custom';
+  frontCustomBgColor?: string;
+  frontCustomTextColor?: string;
   backBgType?: 'white' | 'light-gray' | 'custom';
   backCustomBgColor?: string;
   backCustomTextColor?: string;

@@ -35,8 +35,12 @@ function migrateDecks(loadedDecks: Deck[]): Deck[] {
 
   return loadedDecks.map(deck => {
     const updatedCards = deck.cards.map(card => {
+      const frontType = card.frontContentType || (card.imageUrl ? 'image-text' : 'text');
+      const backType = card.backContentType || (card.backImageUrl ? 'image-text' : 'text');
       return {
         ...card,
+        frontContentType: frontType,
+        backContentType: backType,
         title: replaceText(card.title),
         text: replaceText(card.text),
         backTitle: replaceText(card.backTitle),
@@ -46,6 +50,8 @@ function migrateDecks(loadedDecks: Deck[]): Deck[] {
 
     return {
       ...deck,
+      frontBgType: deck.frontBgType || 'white',
+      backBgType: deck.backBgType || 'white',
       title: replaceText(deck.title),
       description: replaceText(deck.description),
       cards: updatedCards,

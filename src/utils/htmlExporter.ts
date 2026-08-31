@@ -2,66 +2,120 @@ import { Deck } from '../types';
 
 export function generateStandaloneHTML(deck: Deck): string {
   const cards = deck.cards || [];
-  const isSquare = deck.cardAspectRatio === 'square';
+  const format = deck.cardAspectRatio || 'vertical';
+  const isSquare = format === 'square';
+  const isHorizontal = format === 'horizontal';
+  const cardSize = deck.cardSize || 'medium';
   const safeTitle = escapeHTML(deck.title || 'Flashcards');
   const enableSound = !!deck.enableSound;
 
-  const backStyle = deck.backBgType === 'white' 
-    ? 'background-color: #ffffff; color: #0f172a;'
+  const frontBgColor = deck.frontBgType === 'light-gray' 
+    ? '#f1f5f9' 
+    : deck.frontBgType === 'custom' 
+    ? (deck.frontCustomBgColor || '#ffffff') 
+    : '#ffffff';
+
+  const frontTextColor = deck.frontBgType === 'custom'
+    ? (deck.frontCustomTextColor || '#0f172a')
+    : '#0f172a';
+
+  const backBgColor = deck.backBgType === 'white'
+    ? '#ffffff'
     : deck.backBgType === 'custom'
-    ? `background-color: ${deck.backCustomBgColor || '#f1f5f9'}; color: ${deck.backCustomTextColor || '#1e293b'};`
-    : 'background-color: #f1f5f9; color: #0f172a;';
+    ? (deck.backCustomBgColor || '#f1f5f9')
+    : '#f1f5f9';
+
+  const backTextColor = deck.backBgType === 'custom'
+    ? (deck.backCustomTextColor || '#0f172a')
+    : '#0f172a';
+
+  const formatClass = isSquare ? 'fc-square' : isHorizontal ? 'fc-horizontal' : 'fc-vertical';
+  const isSingleLarge = cards.length === 1 && cardSize === 'large';
 
   const cardsHTML = cards.map((card, idx) => {
     let frontBody = '';
-    if (card.frontContentType === 'image' && card.imageUrl) {
+    const frontIsImage = card.frontContentType === 'image' && !!card.imageUrl;
+    const frontIsImageText = !frontIsImage && (card.frontContentType === 'image-text' || (!card.frontContentType && !!card.imageUrl)) && !!card.imageUrl;
+
+    if (frontIsImage) {
       frontBody = `<div class="fc-img-full"><img src="${escapeHTML(card.imageUrl)}" alt="${escapeHTML(card.imageAlt || 'Frente')}" loading="lazy" /></div>`;
-    } else {
-      const hasImg = card.frontContentType === 'image-text' && card.imageUrl;
+    } else if (frontIsImageText) {
       const hasTitle = !!card.title;
       const hasText = card.text && card.text !== card.title;
       
-      frontBody = `<div class="fc-standard-front">
-          ${hasImg ? `<div class="fc-standard-img-wrap"><img src="${escapeHTML(card.imageUrl)}" alt="${escapeHTML(card.imageAlt || 'Imagem Frente')}" loading="lazy" /></div>` : ''}
+      frontBody = `<div class="fc-standard-wrap">
+          <div class="fc-standard-img"><img src="${escapeHTML(card.imageUrl)}" alt="${escapeHTML(card.imageAlt || 'Imagem Frente')}" loading="lazy" /></div>
           <div class="fc-standard-body">
-            ${hasTitle && hasText ? `<h4 class="fc-title">${escapeHTML(card.title)}</h4><p class="fc-desc">${escapeHTML(card.text)}</p>` : ''}
-            ${hasTitle && !hasText ? `<p class="fc-big-text">${escapeHTML(card.title)}</p>` : ''}
-            ${!hasTitle && hasText ? `<p class="fc-big-text">${escapeHTML(card.text)}</p>` : ''}
-            ${!hasTitle && !hasText ? `<p class="fc-big-text">Texto do Card</p>` : ''}
+            ${hasTitle ? `<h3 class="fc-title">${escapeHTML(card.title)}</h3>` : ''}
+            ${hasText ? `<p class="fc-desc">${escapeHTML(card.text)}</p>` : ''}
+            ${!hasTitle && !hasText ? `<p class="fc-desc" style="opacity: 0.5; font-style: italic;">Título &amp; Texto da Frente</p>` : ''}
           </div>
+        </div>`;
+    } else {
+      const hasTitle = !!card.title;
+      const hasText = card.text && card.text !== card.title;
+      frontBody = `<div class="fc-text-wrap">
+          ${hasTitle ? `<h3 class="fc-title">${escapeHTML(card.title)}</h3>` : ''}
+          ${hasText ? `<p class="fc-desc">${escapeHTML(card.text)}</p>` : ''}
+          ${!hasTitle && !hasText ? `<p class="fc-desc">Texto do Card</p>` : ''}
         </div>`;
     }
 
     let backBody = '';
-    if (card.backContentType === 'image' && card.backImageUrl) {
+    const backIsImage = card.backContentType === 'image' && !!card.backImageUrl;
+    const backIsImageText = !backIsImage && (card.backContentType === 'image-text' || (!card.backContentType && !!card.backImageUrl)) && !!card.backImageUrl;
+
+    if (backIsImage) {
       backBody = `<div class="fc-img-full"><img src="${escapeHTML(card.backImageUrl)}" alt="Verso" loading="lazy" /></div>`;
-    } else {
-      const hasImg = card.backContentType === 'image-text' && card.backImageUrl;
+    } else if (backIsImageText) {
       const hasTitle = !!card.backTitle;
       const hasText = card.backText && card.backText !== card.backTitle;
 
-      backBody = `<div class="fc-standard-back">
-          ${hasImg ? `<div class="fc-standard-back-img-wrap"><img src="${escapeHTML(card.backImageUrl)}" alt="Verso" loading="lazy" /></div>` : ''}
+      backBody = `<div class="fc-standard-wrap">
+          <div class="fc-standard-img"><img src="${escapeHTML(card.backImageUrl)}" alt="Verso" loading="lazy" /></div>
           <div class="fc-standard-body">
-            ${hasTitle && hasText ? `<h4 class="fc-back-title">${escapeHTML(card.backTitle)}</h4><p class="fc-back-desc">${escapeHTML(card.backText)}</p>` : ''}
-            ${hasTitle && !hasText ? `<p class="fc-big-text">${escapeHTML(card.backTitle)}</p>` : ''}
-            ${!hasTitle && hasText ? `<p class="fc-big-text">${escapeHTML(card.backText)}</p>` : ''}
-            ${!hasTitle && !hasText ? `<p class="fc-big-text">Resposta</p>` : ''}
+            ${hasTitle ? `<h3 class="fc-back-title">${escapeHTML(card.backTitle)}</h3>` : ''}
+            ${hasText ? `<div class="fc-back-desc">${escapeHTML(card.backText)}</div>` : ''}
+            ${!hasTitle && !hasText ? `<p class="fc-back-desc" style="opacity: 0.5; font-style: italic;">Título &amp; Texto do Verso</p>` : ''}
           </div>
+        </div>`;
+    } else {
+      const hasTitle = !!card.backTitle;
+      const hasText = card.backText && card.backText !== card.backTitle;
+
+      backBody = `<div class="fc-text-wrap">
+          ${hasTitle ? `<h3 class="fc-back-title">${escapeHTML(card.backTitle)}</h3>` : ''}
+          ${hasText ? `<div class="fc-back-desc">${escapeHTML(card.backText)}</div>` : ''}
+          ${!hasTitle && !hasText ? `<p class="fc-back-desc">Resposta</p>` : ''}
         </div>`;
     }
 
-    return `      <div class="fc-item ${isSquare ? 'fc-square' : 'fc-vertical'}" data-card-index="${idx}" onclick="toggleCardFlip(this)">
-        <div class="fc-flipper">
-          <div class="fc-face fc-front">
-            ${frontBody}
+    return `        <div class="fc-item ${formatClass}" data-card-index="${idx}" role="button" tabindex="0" aria-label="Flashcard: clique para girar" onclick="window.fcFlipCard(this, event);">
+          <div class="fc-flipper">
+            <div class="fc-face fc-front">
+              ${frontBody}
+            </div>
+            <div class="fc-face fc-back">
+              ${backBody}
+            </div>
           </div>
-          <div class="fc-face fc-back" style="${backStyle}">
-            ${backBody}
-          </div>
-        </div>
-      </div>`;
+        </div>`;
   }).join('\n');
+
+  let gridClass = 'fc-grid-3';
+  if (cardSize === 'small') {
+    if (cards.length === 1) gridClass = 'fc-grid-1';
+    else if (cards.length === 2) gridClass = 'fc-grid-2';
+    else if (cards.length === 3) gridClass = 'fc-grid-3';
+    else gridClass = 'fc-grid-4';
+  } else if (cardSize === 'large') {
+    if (cards.length === 1) gridClass = 'fc-grid-1';
+    else gridClass = 'fc-grid-2';
+  } else {
+    if (cards.length === 1) gridClass = 'fc-grid-1';
+    else if (cards.length === 2) gridClass = 'fc-grid-2';
+    else gridClass = 'fc-grid-3';
+  }
 
   return `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -70,88 +124,191 @@ export function generateStandaloneHTML(deck: Deck): string {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${safeTitle}</title>
   <style>
+    /* RESET & BASE */
     *, *::before, *::after {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      -webkit-tap-highlight-color: transparent;
     }
 
-    body {
+    html, body {
+      width: 100%;
+      min-height: 100vh;
+      background-color: #f8fafc;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background-color: transparent;
       color: #0f172a;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .fc-page-wrapper {
+      width: 100%;
       min-height: 100vh;
       display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      padding: 24px 16px;
-      line-height: 1.5;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 32px 16px;
     }
 
-    .fc-container {
+    .fc-main-container {
       width: 100%;
-      max-width: 1152px;
+      max-width: 1160px;
       margin: 0 auto;
     }
 
+    /* GRIDS */
     .fc-grid {
       display: grid;
       gap: 24px;
       width: 100%;
+      justify-content: center;
     }
 
     .fc-grid-1 {
-      grid-template-columns: 1fr;
-      max-width: 448px;
+      grid-template-columns: minmax(0, 1fr);
+      max-width: 600px;
       margin: 0 auto;
     }
 
     .fc-grid-2 {
-      grid-template-columns: 1fr;
-      max-width: 768px;
+      grid-template-columns: minmax(0, 1fr);
+      max-width: 860px;
       margin: 0 auto;
     }
-
-    @media (min-width: 768px) {
+    @media (min-width: 640px) {
       .fc-grid-2 {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
+    }
+
+    .fc-grid-3 {
+      grid-template-columns: minmax(0, 1fr);
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    @media (min-width: 640px) {
       .fc-grid-3 {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
-
     @media (min-width: 1024px) {
       .fc-grid-3 {
         grid-template-columns: repeat(3, minmax(0, 1fr));
       }
     }
 
-    .fc-item {
-      perspective: 1000px;
-      -webkit-perspective: 1000px;
-      width: 100%;
-      user-select: none;
-      cursor: pointer;
+    .fc-grid-4 {
+      grid-template-columns: minmax(0, 1fr);
+      max-width: 1200px;
+      margin: 0 auto;
     }
-
-    .fc-item.fc-vertical {
-      height: 380px;
+    @media (min-width: 480px) {
+      .fc-grid-4 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
     }
-
-    @media (min-width: 640px) {
-      .fc-item.fc-vertical {
-        height: 430px;
+    @media (min-width: 768px) {
+      .fc-grid-4 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+    @media (min-width: 1024px) {
+      .fc-grid-4 {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
       }
     }
 
-    .fc-item.fc-square {
+    /* CARD ITEM (3D SCENE) */
+    .fc-item {
+      width: 100%;
+      position: relative;
+      perspective: 1000px;
+      -webkit-perspective: 1000px;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+      outline: none;
+    }
+
+    /* FORMAT & DIMENSIONS - MEDIUM (DEFAULT) */
+    .fc-size-medium .fc-item.fc-vertical {
+      height: 380px;
+      max-width: 340px;
+      margin: 0 auto;
+    }
+    .fc-size-medium .fc-item.fc-square {
       aspect-ratio: 1 / 1;
-      max-width: 448px;
+      min-height: 290px;
+      max-width: 340px;
+      margin: 0 auto;
+    }
+    .fc-size-medium .fc-item.fc-horizontal {
+      aspect-ratio: 16 / 10;
+      min-height: 230px;
+      max-width: 400px;
       margin: 0 auto;
     }
 
+    /* FORMAT & DIMENSIONS - SMALL */
+    .fc-size-small .fc-item.fc-vertical {
+      height: 310px;
+      max-width: 280px;
+      margin: 0 auto;
+    }
+    .fc-size-small .fc-item.fc-square {
+      aspect-ratio: 1 / 1;
+      min-height: 250px;
+      max-width: 280px;
+      margin: 0 auto;
+    }
+    .fc-size-small .fc-item.fc-horizontal {
+      aspect-ratio: 16 / 10;
+      min-height: 190px;
+      max-width: 320px;
+      margin: 0 auto;
+    }
+
+    /* FORMAT & DIMENSIONS - LARGE */
+    .fc-size-large .fc-item.fc-vertical {
+      height: 480px;
+      max-width: 440px;
+      margin: 0 auto;
+    }
+    .fc-size-large .fc-item.fc-square {
+      aspect-ratio: 1 / 1;
+      min-height: 400px;
+      max-width: 440px;
+      margin: 0 auto;
+    }
+    .fc-size-large .fc-item.fc-horizontal {
+      aspect-ratio: 16 / 10;
+      min-height: 300px;
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    /* SINGLE LARGE CARD */
+    .fc-single-large .fc-item.fc-vertical {
+      height: 540px;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    .fc-single-large .fc-item.fc-square {
+      aspect-ratio: 1 / 1;
+      min-height: 460px;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    .fc-single-large .fc-item.fc-horizontal {
+      aspect-ratio: 16 / 10;
+      min-height: 340px;
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
+    /* FLIPPER CONTAINER */
     .fc-flipper {
       position: relative;
       width: 100%;
@@ -168,234 +325,227 @@ export function generateStandaloneHTML(deck: Deck): string {
       -webkit-transform: rotateY(180deg);
     }
 
+    /* CARD FACES */
     .fc-face {
       position: absolute;
-      inset: 0;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
       border-radius: 24px;
       border: 1px solid #e2e8f0;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
 
     .fc-item:hover .fc-face {
       border-color: #60a5fa;
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.06);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
     }
 
     .fc-front {
-      background-color: #ffffff;
+      background-color: ${frontBgColor};
+      color: ${frontTextColor};
       transform: rotateY(0deg);
       -webkit-transform: rotateY(0deg);
     }
 
     .fc-back {
+      background-color: ${backBgColor};
+      color: ${backTextColor};
       transform: rotateY(180deg);
       -webkit-transform: rotateY(180deg);
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.12);
     }
 
+    /* FULL IMAGE */
     .fc-img-full {
       width: 100%;
       height: 100%;
       overflow: hidden;
+      border-radius: 24px;
     }
-
     .fc-img-full img {
       width: 100%;
       height: 100%;
       object-fit: cover;
       display: block;
+      pointer-events: none;
     }
 
-    .fc-center-text {
+    /* TEXT ONLY */
+    .fc-text-wrap {
       flex: 1;
       width: 100%;
       height: 100%;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 32px;
       text-align: center;
-    }
-
-    .fc-big-text {
-      font-size: 1.5rem;
-      font-weight: 800;
-      line-height: 1.35;
-      letter-spacing: -0.02em;
-      word-break: break-word;
-      max-width: 448px;
-      color: inherit;
-    }
-
-    @media (min-width: 640px) {
-      .fc-big-text {
-        font-size: 1.875rem;
-      }
-    }
-
-    .fc-standard-front, .fc-standard-back {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      height: 100%;
-    }
-
-    .fc-standard-img-wrap {
-      width: 100%;
-      height: 176px;
-      background-color: #f1f5f9;
-      overflow: hidden;
-      position: relative;
-      flex-shrink: 0;
-    }
-
-    .fc-standard-img-wrap img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-
-    .fc-standard-back-img-wrap {
-      width: 100%;
-      height: 144px;
-      background-color: rgba(0, 0, 0, 0.05);
-      overflow: hidden;
-      position: relative;
-      flex-shrink: 0;
-    }
-
-    .fc-standard-back-img-wrap img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-
-    .fc-standard-body {
       padding: 24px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      flex: 1;
-      text-align: center;
       overflow-y: auto;
     }
 
-    .fc-title {
-      font-size: 1.125rem;
-      font-weight: 700;
-      color: #1e293b;
-      margin-bottom: 10px;
-      letter-spacing: -0.01em;
-    }
-
-    @media (min-width: 640px) {
-      .fc-title {
-        font-size: 1.25rem;
-      }
-    }
-
-    .fc-desc {
-      font-size: 0.875rem;
-      color: #64748b;
-      line-height: 1.6;
-      display: -webkit-box;
-      -webkit-line-clamp: 4;
-      -webkit-box-orient: vertical;
+    /* STANDARD WRAP (IMAGE + TEXT) */
+    .fc-standard-wrap {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
       overflow: hidden;
     }
 
-    @media (min-width: 640px) {
-      .fc-desc {
-        font-size: 1rem;
-      }
+    .fc-standard-img {
+      width: 100%;
+      background-color: rgba(0, 0, 0, 0.04);
+      overflow: hidden;
+      flex-shrink: 0;
+      border-radius: 24px 24px 0 0;
     }
 
-    .fc-back-title {
-      font-size: 1rem;
+    .fc-size-small .fc-standard-img { height: 110px; }
+    .fc-size-medium .fc-standard-img { height: 150px; }
+    .fc-size-large .fc-standard-img { height: 210px; }
+    .fc-single-large .fc-standard-img { height: 250px; }
+
+    .fc-item.fc-horizontal .fc-standard-img {
+      height: 110px;
+    }
+    .fc-size-large .fc-item.fc-horizontal .fc-standard-img {
+      height: 150px;
+    }
+    .fc-single-large .fc-item.fc-horizontal .fc-standard-img {
+      height: 180px;
+    }
+
+    .fc-standard-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      pointer-events: none;
+    }
+
+    .fc-standard-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 16px 20px;
+      overflow-y: auto;
+    }
+
+    /* TYPOGRAPHY */
+    .fc-title, .fc-back-title {
+      font-size: 1.125rem;
       font-weight: 800;
+      line-height: 1.35;
+      margin-bottom: 6px;
       color: inherit;
+      word-break: break-word;
+      letter-spacing: -0.02em;
+    }
+
+    .fc-size-small .fc-title, .fc-size-small .fc-back-title {
+      font-size: 0.95rem;
+      margin-bottom: 4px;
+    }
+
+    .fc-size-large .fc-title, .fc-size-large .fc-back-title {
+      font-size: 1.35rem;
       margin-bottom: 8px;
     }
 
-    @media (min-width: 640px) {
-      .fc-back-title {
-        font-size: 1.125rem;
-      }
+    .fc-single-large .fc-title, .fc-single-large .fc-back-title {
+      font-size: 1.5rem;
+      margin-bottom: 10px;
     }
 
-    .fc-back-desc {
-      color: inherit;
-      opacity: 0.9;
+    .fc-desc, .fc-back-desc {
       font-size: 0.875rem;
-      line-height: 1.6;
-      text-align: center;
-      max-width: 448px;
-      margin: 0 auto;
+      line-height: 1.5;
+      opacity: 0.85;
+      color: inherit;
+      word-break: break-word;
     }
 
-    @media (min-width: 640px) {
-      .fc-back-desc {
-        font-size: 1rem;
-      }
+    .fc-size-small .fc-desc, .fc-size-small .fc-back-desc {
+      font-size: 0.8125rem;
+    }
+
+    .fc-size-large .fc-desc, .fc-size-large .fc-back-desc {
+      font-size: 1rem;
+    }
+
+    .fc-single-large .fc-desc, .fc-single-large .fc-back-desc {
+      font-size: 1.05rem;
     }
   </style>
 </head>
 <body>
-  <div class="fc-container">
-    <div class="fc-grid ${cards.length === 1 ? 'fc-grid-1' : cards.length === 2 ? 'fc-grid-2' : 'fc-grid-3'}">
+  <div class="fc-page-wrapper fc-size-${cardSize} ${isSingleLarge ? 'fc-single-large' : ''}">
+    <div class="fc-main-container">
+      <div class="fc-grid ${gridClass}">
 ${cardsHTML}
+      </div>
     </div>
   </div>
 
   <script>
-    const enableSound = ${enableSound};
-    let audioCtx = null;
+    (function() {
+      var enableSound = ${enableSound};
+      var audioCtx = null;
 
-    function playFlipSound() {
-      if (!enableSound) return;
-      try {
-        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContextClass) return;
-        if (!audioCtx) {
-          audioCtx = new AudioContextClass();
-        }
-        if (audioCtx.state === 'suspended') {
-          audioCtx.resume();
-        }
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(320, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(140, audioCtx.currentTime + 0.08);
-        gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.09);
-      } catch (e) {
-        // Audio ignored if blocked by browser policy
+      function playSound() {
+        if (!enableSound) return;
+        try {
+          var AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (!AudioContextClass) return;
+          if (!audioCtx) audioCtx = new AudioContextClass();
+          if (audioCtx.state === 'suspended') audioCtx.resume();
+          var osc = audioCtx.createOscillator();
+          var gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(340, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(160, audioCtx.currentTime + 0.08);
+          gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.09);
+        } catch (e) {}
       }
-    }
 
-    function toggleCardFlip(cardElement) {
-      const flipper = cardElement.querySelector('.fc-flipper');
-      if (flipper) {
-        flipper.classList.toggle('is-flipped');
-        playFlipSound();
-      }
-    }
+      window.fcFlipCard = function(el, e) {
+        if (!el) return;
+        var card = (el.classList && el.classList.contains('fc-item')) ? el : (el.closest ? el.closest('.fc-item') : null);
+        if (!card) return;
+        var flipper = card.querySelector('.fc-flipper');
+        if (flipper) {
+          flipper.classList.toggle('is-flipped');
+          playSound();
+        }
+      };
+
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ' || e.code === 'Space') {
+          var active = document.activeElement;
+          if (active && active.classList && active.classList.contains('fc-item')) {
+            e.preventDefault();
+            window.fcFlipCard(active, e);
+          }
+        }
+      });
+    })();
   </script>
 </body>
 </html>`;
@@ -403,47 +553,94 @@ ${cardsHTML}
 
 export function downloadDeckHTML(deck: Deck): void {
   const htmlContent = generateStandaloneHTML(deck);
-  const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
   const safeFilename = (deck.title || 'flashcards')
     .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]/gi, '_')
-    .substring(0, 40);
-  anchor.href = url;
-  anchor.download = `flashcards_${safeFilename}.html`;
-  document.body.appendChild(anchor);
-  anchor.click();
-  document.body.removeChild(anchor);
-  URL.revokeObjectURL(url);
+    .substring(0, 40) || 'flashcards';
+
+  const filename = `flashcards_${safeFilename}.html`;
+
+  try {
+    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+    const url = window.URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.style.display = 'none';
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    
+    setTimeout(() => {
+      if (anchor.parentNode) {
+        anchor.parentNode.removeChild(anchor);
+      }
+      window.URL.revokeObjectURL(url);
+    }, 1000);
+  } catch (err) {
+    console.warn('Blob URL download failed, trying data URI:', err);
+    const encodedUri = 'data:text/html;charset=utf-8,' + encodeURIComponent(htmlContent);
+    const anchor = document.createElement('a');
+    anchor.style.display = 'none';
+    anchor.href = encodedUri;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    setTimeout(() => {
+      if (anchor.parentNode) {
+        anchor.parentNode.removeChild(anchor);
+      }
+    }, 1000);
+  }
 }
 
 export async function copyDeckHTMLToClipboard(deck: Deck): Promise<boolean> {
   const htmlContent = generateStandaloneHTML(deck);
-  try {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
+
+  if (navigator?.clipboard?.writeText) {
+    try {
       await navigator.clipboard.writeText(htmlContent);
       return true;
+    } catch (err) {
+      console.warn('Clipboard writeText failed, using fallback:', err);
     }
+  }
+
+  try {
     const textarea = document.createElement('textarea');
     textarea.value = htmlContent;
     textarea.style.position = 'fixed';
-    textarea.style.opacity = '0';
+    textarea.style.top = '0';
+    textarea.style.left = '0';
+    textarea.style.width = '2em';
+    textarea.style.height = '2em';
+    textarea.style.padding = '0';
+    textarea.style.border = 'none';
+    textarea.style.outline = 'none';
+    textarea.style.boxShadow = 'none';
+    textarea.style.background = 'transparent';
+    textarea.setAttribute('readonly', '');
+    
     document.body.appendChild(textarea);
     textarea.focus();
     textarea.select();
-    const success = document.execCommand('copy');
+    textarea.setSelectionRange(0, textarea.value.length);
+
+    const successful = document.execCommand('copy');
     document.body.removeChild(textarea);
-    return success;
-  } catch (err) {
-    console.error('Failed to copy HTML:', err);
-    return false;
+    
+    return successful;
+  } catch (fallbackErr) {
+    console.error('execCommand copy failed:', fallbackErr);
   }
+
+  return false;
 }
 
 export function generateIframeEmbedCode(deck: Deck): string {
   const safeTitle = escapeHTML(deck.title || 'Flashcards');
-  return `<!-- Flashcards Embed -->\n<iframe src="flashcards_${(deck.title || 'deck').toLowerCase().replace(/[^a-z0-9]/gi, '_')}.html" width="100%" height="600" frameborder="0" style="border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);" title="${safeTitle}"></iframe>`;
+  return `<!-- Flashcards Embed -->\n<iframe src="flashcards_${(deck.title || 'deck').toLowerCase().replace(/[^a-z0-9]/gi, '_')}.html" width="100%" height="600" frameborder="0" style="border: 1px solid #e2e8f0; border-radius: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);" title="${safeTitle}"></iframe>`;
 }
 
 function escapeHTML(str: string): string {

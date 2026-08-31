@@ -9,10 +9,17 @@ export const INITIAL_DECKS: Deck[] = [
     theme: 'rise-blue',
     defaultLayout: 'carousel',
     cardAspectRatio: 'vertical',
+    cardSize: 'medium',
     showProgressBar: false,
     enableSound: false,
     flipPromptText: 'Clique para virar',
     backPromptText: 'Voltar para a frente',
+    frontBgType: 'white',
+    frontCustomBgColor: '#ffffff',
+    frontCustomTextColor: '#0f172a',
+    backBgType: 'white',
+    backCustomBgColor: '#ffffff',
+    backCustomTextColor: '#0f172a',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     cards: [
@@ -44,8 +51,10 @@ export const INITIAL_DECKS: Deck[] = [
         imageUrl: 'https://images.unsplash.com/photo-1555949963-aa79dcee981c?auto=format&fit=crop&w=800&q=80',
         imageAlt: 'Segurança de senhas e autenticação',
         imagePosition: 'top',
+        frontContentType: 'image-text',
         backTitle: 'Camada Extra de Proteção',
         backText: 'Exige uma confirmação adicional (código temporário) que bloqueia acessos mesmo se a senha vazar.',
+        backContentType: 'text',
         cardType: 'standard'
       }
     ]

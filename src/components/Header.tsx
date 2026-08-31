@@ -22,12 +22,17 @@ export const Header: React.FC<HeaderProps> = ({
   onChangeViewMode
 }) => {
   const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState(false);
 
   const handleCopyHTML = async () => {
     const success = await copyDeckHTMLToClipboard(currentDeck);
     if (success) {
       setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
+      setCopyError(false);
+      setTimeout(() => setCopied(false), 3000);
+    } else {
+      setCopyError(true);
+      setTimeout(() => setCopyError(false), 3000);
     }
   };
 
