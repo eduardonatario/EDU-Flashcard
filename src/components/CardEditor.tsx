@@ -5,12 +5,14 @@ import {
   ArrowUp, 
   ArrowDown, 
   Image as ImageIcon, 
+  Video,
   RotateCw, 
   Link as LinkIcon,
   Upload,
   X
 } from 'lucide-react';
 import { Deck, Flashcard, PlayerLayout, CardSize } from '../types';
+import { ReadCardFace } from './ReadCardFace';
 
 export const ABSTRACT_EXAMPLE_IMAGES = [
   'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80',
@@ -649,7 +651,7 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                 <div className="space-y-5">
                   {/* FRENTE */}
                   <div className="space-y-3 bg-white p-4 rounded-2xl border border-slate-200">
-                    <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                    <div className="space-y-3 pb-2 border-b border-slate-100">
                       <div className="flex items-center gap-2">
                         <div className="w-5 h-5 rounded-md bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">
                           1
@@ -657,16 +659,16 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                         <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider">Frente do Card</h3>
                       </div>
 
-                      {/* Tipo de conteúdo Frente */}
-                      <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
+                      {/* Tipo de conteúdo Frente - 2 rows grid */}
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 bg-slate-100 p-1.5 rounded-xl">
                         <button
                           type="button"
                           onClick={() => handleUpdateCard('frontContentType', 'text')}
-                          className={`px-2 py-0.5 text-[11px] font-bold rounded-md transition-all ${
-                            activeCard.frontContentType === 'text' || (!activeCard.frontContentType && !activeCard.imageUrl) ? 'bg-white text-blue-600 shadow-2xs' : 'text-slate-500 hover:text-slate-700'
+                          className={`py-2 px-3 text-xs font-bold rounded-lg transition-all ${
+                            activeCard.frontContentType === 'text' || (!activeCard.frontContentType && !activeCard.imageUrl && !activeCard.videoUrl) ? 'bg-white text-blue-600 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
                           }`}
                         >
-                          Texto Curto
+                          Texto
                         </button>
                         <button
                           type="button"
@@ -676,8 +678,8 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                               imageUrl: activeCard.imageUrl || ABSTRACT_EXAMPLE_IMAGES[0]
                             });
                           }}
-                          className={`px-2 py-0.5 text-[11px] font-bold rounded-md transition-all ${
-                            activeCard.frontContentType === 'image' ? 'bg-white text-blue-600 shadow-2xs' : 'text-slate-500 hover:text-slate-700'
+                          className={`py-2 px-3 text-xs font-bold rounded-lg transition-all ${
+                            activeCard.frontContentType === 'image' ? 'bg-white text-blue-600 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
                           }`}
                         >
                           Imagem
@@ -690,17 +692,233 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                               imageUrl: activeCard.imageUrl || ABSTRACT_EXAMPLE_IMAGES[0]
                             });
                           }}
-                          className={`px-2 py-0.5 text-[11px] font-bold rounded-md transition-all ${
-                            activeCard.frontContentType === 'image-text' || (!activeCard.frontContentType && !!activeCard.imageUrl) ? 'bg-white text-blue-600 shadow-2xs' : 'text-slate-500 hover:text-slate-700'
+                          className={`py-2 px-3 text-xs font-bold rounded-lg transition-all ${
+                            activeCard.frontContentType === 'image-text' || (!activeCard.frontContentType && !!activeCard.imageUrl) ? 'bg-white text-blue-600 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
                           }`}
                         >
-                          Imagem + texto
+                          Img + Texto
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleUpdateCard({
+                              frontContentType: 'video',
+                              videoUrl: activeCard.videoUrl || ''
+                            });
+                          }}
+                          className={`py-2 px-3 text-xs font-bold rounded-lg transition-all ${
+                            activeCard.frontContentType === 'video' ? 'bg-white text-blue-600 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                        >
+                          Vídeo
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleUpdateCard({
+                              frontContentType: 'read',
+                              frontReadAutoplay: activeCard.frontReadAutoplay !== false,
+                              frontReadLang: activeCard.frontReadLang || 'pt-BR',
+                              frontShowPlayButton: activeCard.frontShowPlayButton !== false
+                            });
+                          }}
+                          className={`py-2 px-3 text-xs font-bold rounded-lg transition-all col-span-2 sm:col-span-1 ${
+                            activeCard.frontContentType === 'read' ? 'bg-white text-blue-600 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                        >
+                          Ler card
                         </button>
                       </div>
                     </div>
 
-                    {/* Texto Curto ou Título + Texto */}
-                    {activeCard.frontContentType === 'image-text' || activeCard.frontContentType === 'text' || !activeCard.frontContentType ? (
+                    {/* Conteúdo Frente: Vídeo, Ler card, Texto ou Imagem */}
+                    {activeCard.frontContentType === 'read' ? (
+                      <div className="space-y-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                            Título da frente (corpo maior) *
+                          </label>
+                          <input
+                            type="text"
+                            value={activeCard.title || ''}
+                            onChange={(e) => handleUpdateCard('title', e.target.value)}
+                            placeholder="Digite o título principal..."
+                            className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden bg-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                            Trecho de texto da frente (corpo menor)
+                          </label>
+                          <textarea
+                            value={activeCard.text || ''}
+                            onChange={(e) => handleUpdateCard('text', e.target.value)}
+                            placeholder="Digite o trecho de texto complementar..."
+                            rows={3}
+                            className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden bg-white resize-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                            Modo de Reprodução
+                          </label>
+                          <div className="grid grid-cols-2 gap-2 mb-3">
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateCard('frontReadAutoplay', true)}
+                              className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
+                                activeCard.frontReadAutoplay !== false
+                                  ? 'bg-blue-600 border-blue-600 text-white shadow-2xs'
+                                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
+                              }`}
+                            >
+                              Auto play
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateCard({ frontReadAutoplay: false, frontShowPlayButton: true })}
+                              className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
+                                activeCard.frontReadAutoplay === false
+                                  ? 'bg-blue-600 border-blue-600 text-white shadow-2xs'
+                                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
+                              }`}
+                            >
+                              Aguardar play
+                            </button>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                            Exibição do Botão de Play
+                          </label>
+                          <div className="grid grid-cols-2 gap-2 mb-3">
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateCard('frontShowPlayButton', true)}
+                              className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
+                                activeCard.frontShowPlayButton !== false
+                                  ? 'bg-blue-600 border-blue-600 text-white shadow-2xs'
+                                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
+                              }`}
+                            >
+                              Exibir Botão
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateCard({ frontShowPlayButton: false, frontReadAutoplay: true })}
+                              className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
+                                activeCard.frontShowPlayButton === false
+                                  ? 'bg-blue-600 border-blue-600 text-white shadow-2xs'
+                                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
+                              }`}
+                            >
+                              Ocultar Botão
+                            </button>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                            Idioma da Leitura (TTS)
+                          </label>
+                          <div className="grid grid-cols-2 gap-2 mb-3">
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateCard('frontReadLang', 'pt-BR')}
+                              className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
+                                (activeCard.frontReadLang || 'pt-BR') === 'pt-BR'
+                                  ? 'bg-blue-600 border-blue-600 text-white shadow-2xs'
+                                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
+                              }`}
+                            >
+                              Português (Brasil)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateCard('frontReadLang', 'en-US')}
+                              className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
+                                activeCard.frontReadLang === 'en-US'
+                                  ? 'bg-blue-600 border-blue-600 text-white shadow-2xs'
+                                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
+                              }`}
+                            >
+                              Inglês (English)
+                            </button>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                            URL da imagem (opcional - ocupa todo o espaço do card, lendo o texto em segundo plano)
+                          </label>
+                          <input
+                            type="text"
+                            value={activeCard.frontReadImageUrl || ''}
+                            onChange={(e) => handleUpdateCard('frontReadImageUrl', e.target.value)}
+                            placeholder="https://exemplo.com/imagem.jpg"
+                            className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden bg-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                            URL do arquivo MP3 (opcional - substitui TTS se preenchido)
+                          </label>
+                          <input
+                            type="text"
+                            value={activeCard.frontAudioUrl || ''}
+                            onChange={(e) => handleUpdateCard('frontAudioUrl', e.target.value)}
+                            placeholder="https://exemplo.com/audio.mp3"
+                            className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden"
+                          />
+                        </div>
+                        <p className="text-[11px] text-slate-500 italic mt-1">O título e o texto da frente serão lidos ou o áudio MP3 será reproduzido.</p>
+                      </div>
+                    ) : activeCard.frontContentType === 'video' ? (
+                      <div className="space-y-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">
+                            URL do Vídeo da Frente (YouTube, MP4, etc.) *
+                          </label>
+                          <div className="relative">
+                            <input
+                              type="url"
+                              value={activeCard.videoUrl || ''}
+                              onChange={(e) => handleUpdateCard('videoUrl', e.target.value)}
+                              placeholder="https://www.youtube.com/watch?v=..."
+                              className="w-full pl-8 pr-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden"
+                            />
+                            <LinkIcon className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                            Configuração de Reprodução
+                          </label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateCard('videoAutoplay', true)}
+                              className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
+                                activeCard.videoAutoplay !== false
+                                  ? 'bg-blue-600 border-blue-600 text-white shadow-2xs'
+                                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
+                              }`}
+                            >
+                              Auto play
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateCard('videoAutoplay', false)}
+                              className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
+                                activeCard.videoAutoplay === false
+                                  ? 'bg-blue-600 border-blue-600 text-white shadow-2xs'
+                                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
+                              }`}
+                            >
+                              Aguardar play
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : activeCard.frontContentType === 'image-text' || activeCard.frontContentType === 'text' || !activeCard.frontContentType ? (
                       <div className="space-y-3">
                         <div>
                           <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
@@ -843,7 +1061,7 @@ export const CardEditor: React.FC<CardEditorProps> = ({
 
                   {/* VERSO */}
                   <div className="space-y-3 bg-white p-4 rounded-2xl border border-slate-200">
-                    <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                    <div className="space-y-3 pb-2 border-b border-slate-100">
                       <div className="flex items-center gap-2">
                         <div className="w-5 h-5 rounded-md bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs">
                           2
@@ -851,16 +1069,16 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                         <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider">Verso do Card</h3>
                       </div>
 
-                      {/* Tipo de conteúdo Verso */}
-                      <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
+                      {/* Tipo de conteúdo Verso - 2 rows grid */}
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 bg-slate-100 p-1.5 rounded-xl">
                         <button
                           type="button"
                           onClick={() => handleUpdateCard('backContentType', 'text')}
-                          className={`px-2 py-0.5 text-[11px] font-bold rounded-md transition-all ${
-                            activeCard.backContentType === 'text' || (!activeCard.backContentType && !activeCard.backImageUrl) ? 'bg-white text-emerald-600 shadow-2xs' : 'text-slate-500 hover:text-slate-700'
+                          className={`py-2 px-3 text-xs font-bold rounded-lg transition-all ${
+                            activeCard.backContentType === 'text' || (!activeCard.backContentType && !activeCard.backImageUrl && !activeCard.backVideoUrl) ? 'bg-white text-emerald-600 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
                           }`}
                         >
-                          Texto Curto
+                          Texto
                         </button>
                         <button
                           type="button"
@@ -870,8 +1088,8 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                               backImageUrl: activeCard.backImageUrl || ABSTRACT_EXAMPLE_IMAGES[1]
                             });
                           }}
-                          className={`px-2 py-0.5 text-[11px] font-bold rounded-md transition-all ${
-                            activeCard.backContentType === 'image' ? 'bg-white text-emerald-600 shadow-2xs' : 'text-slate-500 hover:text-slate-700'
+                          className={`py-2 px-3 text-xs font-bold rounded-lg transition-all ${
+                            activeCard.backContentType === 'image' ? 'bg-white text-emerald-600 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
                           }`}
                         >
                           Imagem
@@ -884,17 +1102,233 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                               backImageUrl: activeCard.backImageUrl || ABSTRACT_EXAMPLE_IMAGES[1]
                             });
                           }}
-                          className={`px-2 py-0.5 text-[11px] font-bold rounded-md transition-all ${
-                            activeCard.backContentType === 'image-text' || (!activeCard.backContentType && !!activeCard.backImageUrl) ? 'bg-white text-emerald-600 shadow-2xs' : 'text-slate-500 hover:text-slate-700'
+                          className={`py-2 px-3 text-xs font-bold rounded-lg transition-all ${
+                            activeCard.backContentType === 'image-text' || (!activeCard.backContentType && !!activeCard.backImageUrl) ? 'bg-white text-emerald-600 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
                           }`}
                         >
-                          Imagem + texto
+                          Img + Texto
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleUpdateCard({
+                              backContentType: 'video',
+                              backVideoUrl: activeCard.backVideoUrl || ''
+                            });
+                          }}
+                          className={`py-2 px-3 text-xs font-bold rounded-lg transition-all ${
+                            activeCard.backContentType === 'video' ? 'bg-white text-emerald-600 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                        >
+                          Vídeo
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleUpdateCard({
+                              backContentType: 'read',
+                              backReadAutoplay: activeCard.backReadAutoplay !== false,
+                              backReadLang: activeCard.backReadLang || 'pt-BR',
+                              backShowPlayButton: activeCard.backShowPlayButton !== false
+                            });
+                          }}
+                          className={`py-2 px-3 text-xs font-bold rounded-lg transition-all col-span-2 sm:col-span-1 ${
+                            activeCard.backContentType === 'read' ? 'bg-white text-emerald-600 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                        >
+                          Ler card
                         </button>
                       </div>
                     </div>
 
-                    {/* Texto Curto ou Título + Texto do Verso */}
-                    {activeCard.backContentType === 'image-text' || activeCard.backContentType === 'text' || !activeCard.backContentType ? (
+                    {/* Conteúdo Verso: Vídeo, Ler card, Texto ou Imagem */}
+                    {activeCard.backContentType === 'read' ? (
+                      <div className="space-y-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                            Título do verso (corpo maior) *
+                          </label>
+                          <input
+                            type="text"
+                            value={activeCard.backTitle || ''}
+                            onChange={(e) => handleUpdateCard('backTitle', e.target.value)}
+                            placeholder="Digite o título principal do verso..."
+                            className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-hidden bg-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                            Trecho de texto do verso (corpo menor)
+                          </label>
+                          <textarea
+                            value={activeCard.backText || ''}
+                            onChange={(e) => handleUpdateCard('backText', e.target.value)}
+                            placeholder="Digite o trecho de texto complementar do verso..."
+                            rows={3}
+                            className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-hidden bg-white resize-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                            Modo de Reprodução
+                          </label>
+                          <div className="grid grid-cols-2 gap-2 mb-3">
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateCard('backReadAutoplay', true)}
+                              className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
+                                activeCard.backReadAutoplay !== false
+                                  ? 'bg-emerald-600 border-emerald-600 text-white shadow-2xs'
+                                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
+                              }`}
+                            >
+                              Auto play
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateCard({ backReadAutoplay: false, backShowPlayButton: true })}
+                              className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
+                                activeCard.backReadAutoplay === false
+                                  ? 'bg-emerald-600 border-emerald-600 text-white shadow-2xs'
+                                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
+                              }`}
+                            >
+                              Aguardar play
+                            </button>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                            Exibição do Botão de Play
+                          </label>
+                          <div className="grid grid-cols-2 gap-2 mb-3">
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateCard('backShowPlayButton', true)}
+                              className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
+                                activeCard.backShowPlayButton !== false
+                                  ? 'bg-emerald-600 border-emerald-600 text-white shadow-2xs'
+                                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
+                              }`}
+                            >
+                              Exibir Botão
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateCard({ backShowPlayButton: false, backReadAutoplay: true })}
+                              className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
+                                activeCard.backShowPlayButton === false
+                                  ? 'bg-emerald-600 border-emerald-600 text-white shadow-2xs'
+                                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
+                              }`}
+                            >
+                              Ocultar Botão
+                            </button>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                            Idioma da Leitura (TTS)
+                          </label>
+                          <div className="grid grid-cols-2 gap-2 mb-3">
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateCard('backReadLang', 'pt-BR')}
+                              className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
+                                (activeCard.backReadLang || 'pt-BR') === 'pt-BR'
+                                  ? 'bg-emerald-600 border-emerald-600 text-white shadow-2xs'
+                                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
+                              }`}
+                            >
+                              Português (Brasil)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateCard('backReadLang', 'en-US')}
+                              className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
+                                activeCard.backReadLang === 'en-US'
+                                  ? 'bg-emerald-600 border-emerald-600 text-white shadow-2xs'
+                                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
+                              }`}
+                            >
+                              Inglês (English)
+                            </button>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                            URL da imagem (opcional - ocupa todo o espaço do card, lendo o texto em segundo plano)
+                          </label>
+                          <input
+                            type="text"
+                            value={activeCard.backReadImageUrl || ''}
+                            onChange={(e) => handleUpdateCard('backReadImageUrl', e.target.value)}
+                            placeholder="https://exemplo.com/imagem.jpg"
+                            className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-hidden bg-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                            URL do arquivo MP3 (opcional - substitui TTS se preenchido)
+                          </label>
+                          <input
+                            type="text"
+                            value={activeCard.backAudioUrl || ''}
+                            onChange={(e) => handleUpdateCard('backAudioUrl', e.target.value)}
+                            placeholder="https://exemplo.com/audio.mp3"
+                            className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-hidden"
+                          />
+                        </div>
+                        <p className="text-[11px] text-slate-500 italic mt-1">O título e o texto do verso serão lidos ou o áudio MP3 será reproduzido.</p>
+                      </div>
+                    ) : activeCard.backContentType === 'video' ? (
+                      <div className="space-y-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">
+                            URL do Vídeo do Verso (YouTube, MP4, etc.) *
+                          </label>
+                          <div className="relative">
+                            <input
+                              type="url"
+                              value={activeCard.backVideoUrl || ''}
+                              onChange={(e) => handleUpdateCard('backVideoUrl', e.target.value)}
+                              placeholder="https://www.youtube.com/watch?v=..."
+                              className="w-full pl-8 pr-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden"
+                            />
+                            <LinkIcon className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                            Configuração de Reprodução
+                          </label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateCard('backVideoAutoplay', true)}
+                              className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
+                                activeCard.backVideoAutoplay !== false
+                                  ? 'bg-emerald-600 border-emerald-600 text-white shadow-2xs'
+                                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
+                              }`}
+                            >
+                              Auto play
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateCard('backVideoAutoplay', false)}
+                              className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
+                                activeCard.backVideoAutoplay === false
+                                  ? 'bg-emerald-600 border-emerald-600 text-white shadow-2xs'
+                                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
+                              }`}
+                            >
+                              Aguardar play
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : activeCard.backContentType === 'image-text' || activeCard.backContentType === 'text' || !activeCard.backContentType ? (
                       <div className="space-y-3">
                         <div>
                           <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
@@ -1062,13 +1496,15 @@ export const CardEditor: React.FC<CardEditorProps> = ({
             </div>
 
             {activeCard && (() => {
-              const frontIsImage = activeCard.frontContentType === 'image' && !!activeCard.imageUrl;
-              const frontIsImageText = !frontIsImage && (activeCard.frontContentType === 'image-text' || (!activeCard.frontContentType && !!activeCard.imageUrl)) && !!activeCard.imageUrl;
-              const frontIsTextOnly = !frontIsImage && !frontIsImageText;
+              const frontIsRead = activeCard.frontContentType === 'read';
+              const frontIsImage = !frontIsRead && activeCard.frontContentType === 'image' && !!activeCard.imageUrl;
+              const frontIsImageText = !frontIsRead && !frontIsImage && (activeCard.frontContentType === 'image-text' || (!activeCard.frontContentType && !!activeCard.imageUrl)) && !!activeCard.imageUrl;
+              const frontIsTextOnly = !frontIsRead && !frontIsImage && !frontIsImageText;
 
-              const backIsImage = activeCard.backContentType === 'image' && !!activeCard.backImageUrl;
-              const backIsImageText = !backIsImage && (activeCard.backContentType === 'image-text' || (!activeCard.backContentType && !!activeCard.backImageUrl)) && !!activeCard.backImageUrl;
-              const backIsTextOnly = !backIsImage && !backIsImageText;
+              const backIsRead = activeCard.backContentType === 'read';
+              const backIsImage = !backIsRead && activeCard.backContentType === 'image' && !!activeCard.backImageUrl;
+              const backIsImageText = !backIsRead && !backIsImage && (activeCard.backContentType === 'image-text' || (!activeCard.backContentType && !!activeCard.backImageUrl)) && !!activeCard.backImageUrl;
+              const backIsTextOnly = !backIsRead && !backIsImage && !backIsImageText;
 
               return (
                 <div className={`perspective-1000 w-full ${
@@ -1095,7 +1531,16 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                         color: deck.frontCustomTextColor || '#0f172a'
                       } : {}}
                     >
-                      {frontIsImage ? (
+                      {frontIsRead ? (
+                        <ReadCardFace
+                          title={activeCard.title}
+                          text={activeCard.text}
+                          showPlayButton={activeCard.frontShowPlayButton !== false}
+                          audioUrl={activeCard.frontAudioUrl}
+                          readImageUrl={activeCard.frontReadImageUrl}
+                          isPreview={true}
+                        />
+                      ) : frontIsImage ? (
                         <div className="w-full h-full overflow-hidden bg-slate-100">
                           <img 
                             src={activeCard.imageUrl} 
@@ -1170,7 +1615,16 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                         color: deck.backCustomTextColor || '#1e293b'
                       } : {}}
                     >
-                      {backIsImage ? (
+                      {backIsRead ? (
+                        <ReadCardFace
+                          title={activeCard.backTitle}
+                          text={activeCard.backText}
+                          showPlayButton={activeCard.backShowPlayButton !== false}
+                          audioUrl={activeCard.backAudioUrl}
+                          readImageUrl={activeCard.backReadImageUrl}
+                          isPreview={true}
+                        />
+                      ) : backIsImage ? (
                         <div className="w-full h-full overflow-hidden bg-slate-100">
                           <img 
                             src={activeCard.backImageUrl} 

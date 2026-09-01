@@ -5,14 +5,28 @@ export interface Flashcard {
   imageUrl?: string;
   imageAlt?: string;
   imagePosition?: 'top' | 'side' | 'background';
+  videoUrl?: string;
+  videoAutoplay?: boolean;
   backTitle?: string;
   backText: string;
   backImageUrl?: string;
+  backVideoUrl?: string;
+  backVideoAutoplay?: boolean;
   accentColor?: string;
   isLearned?: boolean;
   cardType?: 'standard' | 'simple';
-  frontContentType?: 'text' | 'image' | 'image-text';
-  backContentType?: 'text' | 'image' | 'image-text';
+  frontContentType?: 'text' | 'image' | 'image-text' | 'video' | 'read';
+  frontReadAutoplay?: boolean;
+  frontReadLang?: 'pt-BR' | 'en-US';
+  frontShowPlayButton?: boolean;
+  frontAudioUrl?: string;
+  frontReadImageUrl?: string;
+  backContentType?: 'text' | 'image' | 'image-text' | 'video' | 'read';
+  backReadAutoplay?: boolean;
+  backReadLang?: 'pt-BR' | 'en-US';
+  backShowPlayButton?: boolean;
+  backAudioUrl?: string;
+  backReadImageUrl?: string;
 }
 
 export type ViewMode = 'player' | 'editor';

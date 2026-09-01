@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { Sparkles, Layers } from 'lucide-react';
+import { Sparkles, Layers, Volume2, Play } from 'lucide-react';
 import { Deck } from '../types';
 import { soundEffects } from '../utils/audio';
+import { parseVideoUrl } from '../utils/videoHelper';
+import { ReadCardFace } from './ReadCardFace';
 
 interface InteractivePlayerProps {
   deck: Deck;
@@ -158,11 +160,15 @@ export const InteractivePlayer: React.FC<InteractivePlayerProps> = ({
           const isFlipped = !!flippedCards[card.id];
 
           // Content type evaluation
-          const frontIsImage = card.frontContentType === 'image' && !!card.imageUrl;
-          const frontIsImageText = (card.frontContentType === 'image-text' || (!card.frontContentType && !!card.imageUrl)) && !!card.imageUrl;
+          const frontIsRead = card.frontContentType === 'read';
+          const frontIsVideo = !frontIsRead && card.frontContentType === 'video' && !!card.videoUrl;
+          const frontIsImage = !frontIsRead && !frontIsVideo && card.frontContentType === 'image' && !!card.imageUrl;
+          const frontIsImageText = !frontIsRead && !frontIsVideo && (card.frontContentType === 'image-text' || (!card.frontContentType && !!card.imageUrl)) && !!card.imageUrl;
 
-          const backIsImage = card.backContentType === 'image' && !!card.backImageUrl;
-          const backIsImageText = (card.backContentType === 'image-text' || (!card.backContentType && !!card.backImageUrl)) && !!card.backImageUrl;
+          const backIsRead = card.backContentType === 'read';
+          const backIsVideo = !backIsRead && card.backContentType === 'video' && !!card.backVideoUrl;
+          const backIsImage = !backIsRead && !backIsVideo && card.backContentType === 'image' && !!card.backImageUrl;
+          const backIsImageText = !backIsRead && !backIsVideo && (card.backContentType === 'image-text' || (!card.backContentType && !!card.backImageUrl)) && !!card.backImageUrl;
 
           return (
             <div 
@@ -186,7 +192,44 @@ export const InteractivePlayer: React.FC<InteractivePlayerProps> = ({
                     color: deck.frontCustomTextColor || '#0f172a'
                   } : {}}
                 >
-                  {frontIsImage ? (
+                  {frontIsRead ? (
+                    /* READ CARD FRONT */
+                    <ReadCardFace
+                      title={card.title}
+                      text={card.text}
+                      autoplay={card.frontReadAutoplay !== false}
+                      lang={card.frontReadLang || 'pt-BR'}
+                      showPlayButton={card.frontShowPlayButton !== false}
+                      audioUrl={card.frontAudioUrl}
+                      isActiveFace={!isFlipped}
+                      readImageUrl={card.frontReadImageUrl}
+                    />
+                  ) : frontIsVideo ? (
+                    <div className="w-full h-full overflow-hidden relative bg-black flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+                      {(() => {
+                        const info = parseVideoUrl(card.videoUrl || '', card.videoAutoplay !== false);
+                        if (!info) return null;
+                        if (info.type === 'youtube' || info.type === 'vimeo') {
+                          return (
+                            <iframe
+                              src={info.embedUrl}
+                              className="w-full h-full border-0 absolute inset-0"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                              allowFullScreen
+                              title="Card Video Front"
+                            />
+                          );
+                        }
+                        return (
+                          <video
+                            src={card.videoUrl}
+                            {...(card.videoAutoplay !== false ? { autoPlay: true, muted: true, playsInline: true, loop: true } : { controls: true, playsInline: true })}
+                            className="w-full h-full object-cover"
+                          />
+                        );
+                      })()}
+                    </div>
+                  ) : frontIsImage ? (
                     /* IMAGE ONLY FRONT */
                     <div className="w-full h-full overflow-hidden">
                       <img 
@@ -268,7 +311,44 @@ export const InteractivePlayer: React.FC<InteractivePlayerProps> = ({
                     color: deck.backCustomTextColor || '#1e293b'
                   } : {}}
                 >
-                  {backIsImage ? (
+                  {backIsRead ? (
+                    /* READ CARD BACK */
+                    <ReadCardFace
+                      title={card.backTitle}
+                      text={card.backText}
+                      autoplay={card.backReadAutoplay !== false}
+                      lang={card.backReadLang || 'pt-BR'}
+                      showPlayButton={card.backShowPlayButton !== false}
+                      audioUrl={card.backAudioUrl}
+                      isActiveFace={isFlipped}
+                      readImageUrl={card.backReadImageUrl}
+                    />
+                  ) : backIsVideo ? (
+                    <div className="w-full h-full overflow-hidden relative bg-black flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+                      {(() => {
+                        const info = parseVideoUrl(card.backVideoUrl || '', card.backVideoAutoplay !== false);
+                        if (!info) return null;
+                        if (info.type === 'youtube' || info.type === 'vimeo') {
+                          return (
+                            <iframe
+                              src={info.embedUrl}
+                              className="w-full h-full border-0 absolute inset-0"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                              allowFullScreen
+                              title="Card Video Back"
+                            />
+                          );
+                        }
+                        return (
+                          <video
+                            src={card.backVideoUrl}
+                            {...(card.backVideoAutoplay !== false ? { autoPlay: true, muted: true, playsInline: true, loop: true } : { controls: true, playsInline: true })}
+                            className="w-full h-full object-cover"
+                          />
+                        );
+                      })()}
+                    </div>
+                  ) : backIsImage ? (
                     /* IMAGE ONLY BACK */
                     <div className="w-full h-full overflow-hidden">
                       <img 

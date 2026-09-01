@@ -1,4 +1,5 @@
 import { Deck } from '../types';
+import { parseVideoUrl } from './videoHelper';
 
 export function generateStandaloneHTML(deck: Deck): string {
   const cards = deck.cards || [];
@@ -34,10 +35,19 @@ export function generateStandaloneHTML(deck: Deck): string {
 
   const cardsHTML = cards.map((card, idx) => {
     let frontBody = '';
-    const frontIsImage = card.frontContentType === 'image' && !!card.imageUrl;
-    const frontIsImageText = !frontIsImage && (card.frontContentType === 'image-text' || (!card.frontContentType && !!card.imageUrl)) && !!card.imageUrl;
+    const frontIsVideo = card.frontContentType === 'video' && !!card.videoUrl;
+    const frontIsImage = !frontIsVideo && card.frontContentType === 'image' && !!card.imageUrl;
+    const frontIsImageText = !frontIsVideo && (card.frontContentType === 'image-text' || (!card.frontContentType && !!card.imageUrl)) && !!card.imageUrl;
 
-    if (frontIsImage) {
+    if (frontIsVideo) {
+      const info = parseVideoUrl(card.videoUrl || '', card.videoAutoplay !== false);
+      if (info && (info.type === 'youtube' || info.type === 'vimeo')) {
+        frontBody = `<div class="fc-img-full" style="background:#000; position:relative;" onclick="event.stopPropagation();"><iframe src="${escapeHTML(info.embedUrl)}" style="width:100%;height:100%;border:0;position:absolute;top:0;left:0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen title="Front Video"></iframe></div>`;
+      } else {
+        const isAuto = card.videoAutoplay !== false;
+        frontBody = `<div class="fc-img-full" style="background:#000;" onclick="event.stopPropagation();"><video src="${escapeHTML(card.videoUrl)}" ${isAuto ? 'autoplay muted playsinline loop' : 'controls playsinline'} style="width:100%;height:100%;object-fit:cover;display:block;"></video></div>`;
+      }
+    } else if (frontIsImage) {
       frontBody = `<div class="fc-img-full"><img src="${escapeHTML(card.imageUrl)}" alt="${escapeHTML(card.imageAlt || 'Frente')}" loading="lazy" /></div>`;
     } else if (frontIsImageText) {
       const hasTitle = !!card.title;
@@ -62,10 +72,19 @@ export function generateStandaloneHTML(deck: Deck): string {
     }
 
     let backBody = '';
-    const backIsImage = card.backContentType === 'image' && !!card.backImageUrl;
-    const backIsImageText = !backIsImage && (card.backContentType === 'image-text' || (!card.backContentType && !!card.backImageUrl)) && !!card.backImageUrl;
+    const backIsVideo = card.backContentType === 'video' && !!card.backVideoUrl;
+    const backIsImage = !backIsVideo && card.backContentType === 'image' && !!card.backImageUrl;
+    const backIsImageText = !backIsVideo && (card.backContentType === 'image-text' || (!card.backContentType && !!card.backImageUrl)) && !!card.backImageUrl;
 
-    if (backIsImage) {
+    if (backIsVideo) {
+      const info = parseVideoUrl(card.backVideoUrl || '', card.backVideoAutoplay !== false);
+      if (info && (info.type === 'youtube' || info.type === 'vimeo')) {
+        backBody = `<div class="fc-img-full" style="background:#000; position:relative;" onclick="event.stopPropagation();"><iframe src="${escapeHTML(info.embedUrl)}" style="width:100%;height:100%;border:0;position:absolute;top:0;left:0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen title="Back Video"></iframe></div>`;
+      } else {
+        const isAuto = card.backVideoAutoplay !== false;
+        backBody = `<div class="fc-img-full" style="background:#000;" onclick="event.stopPropagation();"><video src="${escapeHTML(card.backVideoUrl)}" ${isAuto ? 'autoplay muted playsinline loop' : 'controls playsinline'} style="width:100%;height:100%;object-fit:cover;display:block;"></video></div>`;
+      }
+    } else if (backIsImage) {
       backBody = `<div class="fc-img-full"><img src="${escapeHTML(card.backImageUrl)}" alt="Verso" loading="lazy" /></div>`;
     } else if (backIsImageText) {
       const hasTitle = !!card.backTitle;
