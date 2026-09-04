@@ -25,37 +25,42 @@ export const INITIAL_DECKS: Deck[] = [
     cards: [
       {
         id: 'card-1',
-        title: 'O que é Phishing?',
-        text: 'O que é Phishing?',
-        cardType: 'simple',
-        frontContentType: 'text',
+        title: 'Título do card 1',
+        text: 'Texto do card',
+        cardType: 'standard',
+        frontContentType: 'image-text',
+        imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80',
+        imageAlt: 'Imagem abstrata 1',
+        imagePosition: 'top',
         backTitle: 'Definição',
-        backText: 'Golpe eletrônico por e-mail para roubo de senhas e dados.',
+        backText: 'Verso do Flashcard 1',
         backContentType: 'text'
       },
       {
         id: 'card-2',
-        title: 'Identificação Visual',
-        text: 'Identifique o alerta de segurança',
-        cardType: 'simple',
-        frontContentType: 'image',
-        imageUrl: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=800&q=80',
+        title: 'Título do card 2',
+        text: 'Texto do card',
+        cardType: 'standard',
+        frontContentType: 'image-text',
+        imageUrl: 'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?auto=format&fit=crop&w=800&q=80',
+        imageAlt: 'Imagem abstrata 2',
+        imagePosition: 'top',
         backTitle: 'Resposta',
-        backText: 'Alerta de tentativa de invasão bloqueada com sucesso.',
+        backText: 'Verso do Flashcard 2',
         backContentType: 'text'
       },
       {
         id: 'card-3',
-        title: 'Autenticação Multifator (MFA)',
-        text: 'Qual é o principal benefício do MFA nos acessos corporativos?',
-        imageUrl: 'https://images.unsplash.com/photo-1555949963-aa79dcee981c?auto=format&fit=crop&w=800&q=80',
-        imageAlt: 'Segurança de senhas e autenticação',
-        imagePosition: 'top',
+        title: 'Título do card 3',
+        text: 'Texto do card',
+        cardType: 'standard',
         frontContentType: 'image-text',
+        imageUrl: 'https://images.unsplash.com/photo-1618005198919-d3d4b5a92ead?auto=format&fit=crop&w=800&q=80',
+        imageAlt: 'Imagem abstrata 3',
+        imagePosition: 'top',
         backTitle: 'Camada Extra de Proteção',
-        backText: 'Exige uma confirmação adicional (código temporário) que bloqueia acessos mesmo se a senha vazar.',
-        backContentType: 'text',
-        cardType: 'standard'
+        backText: 'Verso do Flashcard 3',
+        backContentType: 'text'
       }
     ]
   }

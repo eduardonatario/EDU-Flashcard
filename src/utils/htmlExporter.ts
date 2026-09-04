@@ -34,21 +34,73 @@ export function generateStandaloneHTML(deck: Deck): string {
   const isSingleLarge = cards.length === 1 && cardSize === 'large';
 
   const cardsHTML = cards.map((card, idx) => {
-    let frontBody = '';
-    const frontIsVideo = card.frontContentType === 'video' && !!card.videoUrl;
-    const frontIsImage = !frontIsVideo && card.frontContentType === 'image' && !!card.imageUrl;
-    const frontIsImageText = !frontIsVideo && (card.frontContentType === 'image-text' || (!card.frontContentType && !!card.imageUrl)) && !!card.imageUrl;
+    // Generate audio-only structures for non-read cards if audio is enabled
+    const frontTitle = card.title || '';
+    const frontText = card.text || '';
+    const frontFallbackText = frontTitle || frontText || card.imageAlt || 'Frente';
+    const frontFullText = frontTitle && frontText && frontTitle !== frontText
+      ? `${frontTitle}. ${frontText}`
+      : (frontTitle || frontText || frontFallbackText);
+    const frontLang = card.frontReadLang || 'pt-BR';
+    const frontAudioUrl = card.frontAudioUrl || '';
+    const frontAutoplay = card.frontReadAutoplay !== false;
 
-    if (frontIsVideo) {
+    const backTitle = card.backTitle || '';
+    const backText = card.backText || '';
+    const backFallbackText = backTitle || backText || 'Verso';
+    const backFullText = backTitle && backText && backTitle !== backText
+      ? `${backTitle}. ${backText}`
+      : (backTitle || backText || backFallbackText);
+    const backLang = card.backReadLang || 'pt-BR';
+    const backAudioUrl = card.backAudioUrl || '';
+    const backAutoplay = card.backReadAutoplay !== false;
+
+    let frontBody = '';
+    const frontIsRead = card.frontContentType === 'read';
+    const frontIsVideo = !frontIsRead && card.frontContentType === 'video' && !!card.videoUrl;
+    const frontIsImage = !frontIsRead && !frontIsVideo && card.frontContentType === 'image' && !!card.imageUrl;
+    const frontIsImageText = !frontIsRead && !frontIsVideo && (card.frontContentType === 'image-text' || (!card.frontContentType && !!card.imageUrl)) && !!card.imageUrl;
+
+    const renderPlayBtn = (hasBg: boolean) => `
+      <button type="button" class="fc-play-btn ${hasBg ? 'has-bg' : ''}" onclick="window.fcTogglePlay(this, event);" aria-label="Reproduzir áudio">
+        <svg class="fc-icon-play" viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M6 4l14 8-14 8V4z"/></svg>
+        <svg class="fc-icon-stop" viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>
+        <span class="fc-play-text">Play</span>
+      </button>`;
+
+    const frontShowPlay = card.frontShowPlayButton !== false;
+    const frontHasImage = frontIsImage || frontIsImageText;
+    const frontAudioBtn = card.frontAudioEnabled === true
+      ? `<div class="fc-read-face fc-audio-only-face" data-full-text="${escapeHTML(frontFullText)}" data-lang="${frontLang}" data-audio-url="${escapeHTML(frontAudioUrl)}" data-autoplay="${frontAutoplay}">
+          ${frontShowPlay ? renderPlayBtn(frontHasImage) : ''}
+         </div>`
+      : '';
+
+    if (frontIsRead) {
+      const title = card.title || '';
+      const text = card.text || '';
+      const fullText = title === text ? title : [title, text].filter(Boolean).join('. ');
+      const readImg = card.frontReadImageUrl || '';
+      const showPlay = card.frontShowPlayButton !== false;
+      const lang = card.frontReadLang || 'pt-BR';
+      const audioUrl = card.frontAudioUrl || '';
+      const autoplay = card.frontReadAutoplay !== false;
+
+      frontBody = `<div class="fc-read-face" data-full-text="${escapeHTML(fullText)}" data-lang="${lang}" data-audio-url="${escapeHTML(audioUrl)}" data-autoplay="${autoplay}">
+        ${readImg ? `<div class="fc-read-bg"><img src="${escapeHTML(readImg)}" alt="" loading="lazy" /></div>` : ''}
+        ${showPlay ? renderPlayBtn(!!readImg) : ''}
+        ${!readImg ? `<div class="fc-read-text-wrap">${title ? `<h3 class="fc-title">${escapeHTML(title)}</h3>` : ''}${text && text !== title ? `<p class="fc-desc">${escapeHTML(text)}</p>` : ''}${!title && !text ? `<p class="fc-desc" style="opacity:0.5; font-style:italic;">Modo Ler Card</p>` : ''}</div>` : ''}
+      </div>`;
+    } else if (frontIsVideo) {
       const info = parseVideoUrl(card.videoUrl || '', card.videoAutoplay !== false);
       if (info && (info.type === 'youtube' || info.type === 'vimeo')) {
-        frontBody = `<div class="fc-img-full" style="background:#000; position:relative;" onclick="event.stopPropagation();"><iframe src="${escapeHTML(info.embedUrl)}" style="width:100%;height:100%;border:0;position:absolute;top:0;left:0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen title="Front Video"></iframe></div>`;
+        frontBody = `<div class="fc-img-full" style="background:#000; position:relative;" onclick="event.stopPropagation();"><iframe src="${escapeHTML(info.embedUrl)}" style="width:100%;height:100%;border:0;position:absolute;top:0;left:0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen title="Front Video"></iframe></div>` + frontAudioBtn;
       } else {
         const isAuto = card.videoAutoplay !== false;
-        frontBody = `<div class="fc-img-full" style="background:#000;" onclick="event.stopPropagation();"><video src="${escapeHTML(card.videoUrl)}" ${isAuto ? 'autoplay muted playsinline loop' : 'controls playsinline'} style="width:100%;height:100%;object-fit:cover;display:block;"></video></div>`;
+        frontBody = `<div class="fc-img-full" style="background:#000;" onclick="event.stopPropagation();"><video src="${escapeHTML(card.videoUrl)}" ${isAuto ? 'autoplay muted playsinline loop' : 'controls playsinline'} style="width:100%;height:100%;object-fit:cover;display:block;"></video></div>` + frontAudioBtn;
       }
     } else if (frontIsImage) {
-      frontBody = `<div class="fc-img-full"><img src="${escapeHTML(card.imageUrl)}" alt="${escapeHTML(card.imageAlt || 'Frente')}" loading="lazy" /></div>`;
+      frontBody = `<div class="fc-img-full"><img src="${escapeHTML(card.imageUrl)}" alt="${escapeHTML(card.imageAlt || 'Frente')}" loading="lazy" /></div>` + frontAudioBtn;
     } else if (frontIsImageText) {
       const hasTitle = !!card.title;
       const hasText = card.text && card.text !== card.title;
@@ -60,7 +112,7 @@ export function generateStandaloneHTML(deck: Deck): string {
             ${hasText ? `<p class="fc-desc">${escapeHTML(card.text)}</p>` : ''}
             ${!hasTitle && !hasText ? `<p class="fc-desc" style="opacity: 0.5; font-style: italic;">Título &amp; Texto da Frente</p>` : ''}
           </div>
-        </div>`;
+        </div>` + frontAudioBtn;
     } else {
       const hasTitle = !!card.title;
       const hasText = card.text && card.text !== card.title;
@@ -68,24 +120,48 @@ export function generateStandaloneHTML(deck: Deck): string {
           ${hasTitle ? `<h3 class="fc-title">${escapeHTML(card.title)}</h3>` : ''}
           ${hasText ? `<p class="fc-desc">${escapeHTML(card.text)}</p>` : ''}
           ${!hasTitle && !hasText ? `<p class="fc-desc">Texto do Card</p>` : ''}
-        </div>`;
+        </div>` + frontAudioBtn;
     }
 
     let backBody = '';
-    const backIsVideo = card.backContentType === 'video' && !!card.backVideoUrl;
-    const backIsImage = !backIsVideo && card.backContentType === 'image' && !!card.backImageUrl;
-    const backIsImageText = !backIsVideo && (card.backContentType === 'image-text' || (!card.backContentType && !!card.backImageUrl)) && !!card.backImageUrl;
+    const backIsRead = card.backContentType === 'read';
+    const backIsVideo = !backIsRead && card.backContentType === 'video' && !!card.backVideoUrl;
+    const backIsImage = !backIsRead && !backIsVideo && card.backContentType === 'image' && !!card.backImageUrl;
+    const backIsImageText = !backIsRead && !backIsVideo && (card.backContentType === 'image-text' || (!card.backContentType && !!card.backImageUrl)) && !!card.backImageUrl;
 
-    if (backIsVideo) {
+    const backShowPlay = card.backShowPlayButton !== false;
+    const backHasImage = backIsImage || backIsImageText;
+    const backAudioBtn = card.backAudioEnabled === true
+      ? `<div class="fc-read-face fc-audio-only-face" data-full-text="${escapeHTML(backFullText)}" data-lang="${backLang}" data-audio-url="${escapeHTML(backAudioUrl)}" data-autoplay="${backAutoplay}">
+          ${backShowPlay ? renderPlayBtn(backHasImage) : ''}
+         </div>`
+      : '';
+
+    if (backIsRead) {
+      const title = card.backTitle || '';
+      const text = card.backText || '';
+      const fullText = title === text ? title : [title, text].filter(Boolean).join('. ');
+      const readImg = card.backReadImageUrl || '';
+      const showPlay = card.backShowPlayButton !== false;
+      const lang = card.backReadLang || 'pt-BR';
+      const audioUrl = card.backAudioUrl || '';
+      const autoplay = card.backReadAutoplay !== false;
+
+      backBody = `<div class="fc-read-face" data-full-text="${escapeHTML(fullText)}" data-lang="${lang}" data-audio-url="${escapeHTML(audioUrl)}" data-autoplay="${autoplay}">
+        ${readImg ? `<div class="fc-read-bg"><img src="${escapeHTML(readImg)}" alt="" loading="lazy" /></div>` : ''}
+        ${showPlay ? renderPlayBtn(!!readImg) : ''}
+        ${!readImg ? `<div class="fc-read-text-wrap">${title ? `<h3 class="fc-back-title">${escapeHTML(title)}</h3>` : ''}${text && text !== title ? `<div class="fc-back-desc">${escapeHTML(text)}</div>` : ''}${!title && !text ? `<p class="fc-back-desc" style="opacity:0.5; font-style:italic;">Modo Ler Card</p>` : ''}</div>` : ''}
+      </div>`;
+    } else if (backIsVideo) {
       const info = parseVideoUrl(card.backVideoUrl || '', card.backVideoAutoplay !== false);
       if (info && (info.type === 'youtube' || info.type === 'vimeo')) {
-        backBody = `<div class="fc-img-full" style="background:#000; position:relative;" onclick="event.stopPropagation();"><iframe src="${escapeHTML(info.embedUrl)}" style="width:100%;height:100%;border:0;position:absolute;top:0;left:0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen title="Back Video"></iframe></div>`;
+        backBody = `<div class="fc-img-full" style="background:#000; position:relative;" onclick="event.stopPropagation();"><iframe src="${escapeHTML(info.embedUrl)}" style="width:100%;height:100%;border:0;position:absolute;top:0;left:0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen title="Back Video"></iframe></div>` + backAudioBtn;
       } else {
         const isAuto = card.backVideoAutoplay !== false;
-        backBody = `<div class="fc-img-full" style="background:#000;" onclick="event.stopPropagation();"><video src="${escapeHTML(card.backVideoUrl)}" ${isAuto ? 'autoplay muted playsinline loop' : 'controls playsinline'} style="width:100%;height:100%;object-fit:cover;display:block;"></video></div>`;
+        backBody = `<div class="fc-img-full" style="background:#00;" onclick="event.stopPropagation();"><video src="${escapeHTML(card.backVideoUrl)}" ${isAuto ? 'autoplay muted playsinline loop' : 'controls playsinline'} style="width:100%;height:100%;object-fit:cover;display:block;"></video></div>` + backAudioBtn;
       }
     } else if (backIsImage) {
-      backBody = `<div class="fc-img-full"><img src="${escapeHTML(card.backImageUrl)}" alt="Verso" loading="lazy" /></div>`;
+      backBody = `<div class="fc-img-full"><img src="${escapeHTML(card.backImageUrl)}" alt="Verso" loading="lazy" /></div>` + backAudioBtn;
     } else if (backIsImageText) {
       const hasTitle = !!card.backTitle;
       const hasText = card.backText && card.backText !== card.backTitle;
@@ -97,7 +173,7 @@ export function generateStandaloneHTML(deck: Deck): string {
             ${hasText ? `<div class="fc-back-desc">${escapeHTML(card.backText)}</div>` : ''}
             ${!hasTitle && !hasText ? `<p class="fc-back-desc" style="opacity: 0.5; font-style: italic;">Título &amp; Texto do Verso</p>` : ''}
           </div>
-        </div>`;
+        </div>` + backAudioBtn;
     } else {
       const hasTitle = !!card.backTitle;
       const hasText = card.backText && card.backText !== card.backTitle;
@@ -106,7 +182,7 @@ export function generateStandaloneHTML(deck: Deck): string {
           ${hasTitle ? `<h3 class="fc-back-title">${escapeHTML(card.backTitle)}</h3>` : ''}
           ${hasText ? `<div class="fc-back-desc">${escapeHTML(card.backText)}</div>` : ''}
           ${!hasTitle && !hasText ? `<p class="fc-back-desc">Resposta</p>` : ''}
-        </div>`;
+        </div>` + backAudioBtn;
     }
 
     return `        <div class="fc-item ${formatClass}" data-card-index="${idx}" role="button" tabindex="0" aria-label="Flashcard: clique para girar" onclick="window.fcFlipCard(this, event);">
@@ -141,6 +217,7 @@ export function generateStandaloneHTML(deck: Deck): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>${safeTitle}</title>
   <style>
     /* RESET & BASE */
@@ -152,22 +229,25 @@ export function generateStandaloneHTML(deck: Deck): string {
 
     html, body {
       width: 100%;
-      min-height: 100vh;
-      background-color: #f8fafc;
+      margin: 0;
+      padding: 0;
+      background-color: transparent;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       color: #0f172a;
       line-height: 1.5;
       -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
     }
 
     .fc-page-wrapper {
       width: 100%;
-      min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
-      padding: 32px 16px;
+      padding: 8px 8px 12px;
+      margin: 0 auto;
+      box-sizing: border-box;
     }
 
     .fc-main-container {
@@ -525,6 +605,123 @@ export function generateStandaloneHTML(deck: Deck): string {
     .fc-single-large .fc-desc, .fc-single-large .fc-back-desc {
       font-size: 1.05rem;
     }
+
+    .fc-read-face {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+      overflow: hidden;
+    }
+    .fc-read-face.fc-audio-only-face {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: auto;
+      height: auto;
+      padding: 0;
+      background: transparent;
+      border: none;
+      z-index: 30;
+      flex: none;
+      display: block;
+      overflow: visible;
+    }
+    .fc-read-face.fc-audio-only-face .fc-play-btn {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+    }
+    .fc-read-bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      overflow: hidden;
+      border-radius: 24px;
+    }
+    .fc-read-bg img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .fc-play-btn {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      z-index: 25;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      transition: all 0.2s ease;
+      background: #e2e8f0;
+      color: #334155;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      line-height: 1;
+    }
+    .fc-play-btn svg {
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .fc-play-btn .fc-icon-stop {
+      display: none;
+    }
+    .fc-play-btn .fc-icon-play {
+      display: inline-block;
+    }
+    .fc-play-btn.playing .fc-icon-play {
+      display: none;
+    }
+    .fc-play-btn.playing .fc-icon-stop {
+      display: inline-block;
+    }
+    .fc-play-btn.playing {
+      background: #e2e8f0;
+      color: #334155;
+      border-color: rgba(0, 0, 0, 0.08);
+    }
+    .fc-play-btn:hover,
+    .fc-play-btn.playing:hover {
+      background: #cbd5e1;
+    }
+    .fc-play-btn.has-bg {
+      background: rgba(255, 255, 255, 0.9);
+      color: #1e293b;
+      backdrop-filter: blur(4px);
+    }
+    .fc-play-btn.has-bg:hover,
+    .fc-play-btn.has-bg.playing:hover {
+      background: #ffffff;
+    }
+    .fc-play-btn.has-bg.playing {
+      background: rgba(255, 255, 255, 0.9);
+      color: #1e293b;
+    }
+    .fc-read-text-wrap {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      max-width: 440px;
+      margin: 0 auto;
+    }
   </style>
 </head>
 <body>
@@ -540,6 +737,7 @@ ${cardsHTML}
     (function() {
       var enableSound = ${enableSound};
       var audioCtx = null;
+      var currentAudio = null;
 
       function playSound() {
         if (!enableSound) return;
@@ -562,6 +760,77 @@ ${cardsHTML}
         } catch (e) {}
       }
 
+      function stopSpeech() {
+        if (currentAudio) {
+          currentAudio.pause();
+          currentAudio = null;
+        }
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+        }
+        var playingBtns = document.querySelectorAll('.fc-play-btn.playing');
+        for (var i = 0; i < playingBtns.length; i++) {
+          var b = playingBtns[i];
+          b.classList.remove('playing');
+          var t = b.querySelector('.fc-play-text');
+          if (t) t.textContent = 'Play';
+        }
+      }
+
+      window.fcPlayFace = function(face) {
+        if (!face) return;
+        var fullText = face.getAttribute('data-full-text') || '';
+        var lang = face.getAttribute('data-lang') || 'pt-BR';
+        var audioUrl = face.getAttribute('data-audio-url') || '';
+        var btn = face.querySelector('.fc-play-btn');
+
+        stopSpeech();
+        if (btn) {
+          btn.classList.add('playing');
+          var textSpan = btn.querySelector('.fc-play-text');
+          if (textSpan) textSpan.textContent = 'Stop';
+        }
+
+        function onEnd() {
+          if (btn) {
+            btn.classList.remove('playing');
+            var textSpan = btn.querySelector('.fc-play-text');
+            if (textSpan) textSpan.textContent = 'Play';
+          }
+        }
+
+        if (audioUrl) {
+          var audio = new Audio(audioUrl);
+          currentAudio = audio;
+          audio.onended = onEnd;
+          audio.onerror = onEnd;
+          audio.play().catch(onEnd);
+        } else if (fullText && 'speechSynthesis' in window) {
+          var utterance = new SpeechSynthesisUtterance(fullText);
+          utterance.lang = lang;
+          utterance.onend = onEnd;
+          utterance.onerror = onEnd;
+          window.speechSynthesis.speak(utterance);
+        } else {
+          onEnd();
+        }
+      };
+
+      window.fcTogglePlay = function(btn, e) {
+        if (e) e.stopPropagation();
+        var face = btn.closest('.fc-read-face');
+        if (!face) return;
+
+        var isPlaying = btn.classList.contains('playing');
+        stopSpeech();
+
+        if (isPlaying) {
+          return;
+        }
+
+        window.fcPlayFace(face);
+      };
+
       window.fcFlipCard = function(el, e) {
         if (!el) return;
         var card = (el.classList && el.classList.contains('fc-item')) ? el : (el.closest ? el.closest('.fc-item') : null);
@@ -570,8 +839,30 @@ ${cardsHTML}
         if (flipper) {
           flipper.classList.toggle('is-flipped');
           playSound();
+          stopSpeech();
+          var isFlipped = flipper.classList.contains('is-flipped');
+          var activeFace = flipper.querySelector(isFlipped ? '.fc-back .fc-read-face' : '.fc-front .fc-read-face');
+          if (activeFace) {
+            var autoplay = activeFace.getAttribute('data-autoplay') !== 'false';
+            if (autoplay) {
+              window.fcPlayFace(activeFace);
+            }
+          }
         }
       };
+
+      // Auto play first card read face on load if present
+      window.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+          var firstFace = document.querySelector('.fc-item .fc-front .fc-read-face');
+          if (firstFace) {
+            var autoplay = firstFace.getAttribute('data-autoplay') !== 'false';
+            if (autoplay) {
+              window.fcPlayFace(firstFace);
+            }
+          }
+        }, 500);
+      });
 
       document.addEventListener('keydown', function(e) {
         if (e.key === 'Enter' || e.key === ' ' || e.code === 'Space') {
@@ -582,6 +873,20 @@ ${cardsHTML}
           }
         }
       });
+
+      // Broadcast content height to parent window for responsive embed containers
+      function notifyEmbedHeight() {
+        if (window.parent && window.parent !== window) {
+          try {
+            var scrollH = document.documentElement.scrollHeight || document.body.scrollHeight;
+            window.parent.postMessage({ type: 'rise-flashcards-resize', height: scrollH }, '*');
+          } catch(e) {}
+        }
+      }
+      window.addEventListener('load', notifyEmbedHeight);
+      window.addEventListener('resize', notifyEmbedHeight);
+      setTimeout(notifyEmbedHeight, 150);
+      setTimeout(notifyEmbedHeight, 600);
     })();
   </script>
 </body>
@@ -590,14 +895,7 @@ ${cardsHTML}
 
 export function downloadDeckHTML(deck: Deck): void {
   const htmlContent = generateStandaloneHTML(deck);
-  const safeFilename = (deck.title || 'flashcards')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]/gi, '_')
-    .substring(0, 40) || 'flashcards';
-
-  const filename = `flashcards_${safeFilename}.html`;
+  const filename = 'Flashcard.html';
 
   try {
     const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
@@ -677,7 +975,19 @@ export async function copyDeckHTMLToClipboard(deck: Deck): Promise<boolean> {
 
 export function generateIframeEmbedCode(deck: Deck): string {
   const safeTitle = escapeHTML(deck.title || 'Flashcards');
-  return `<!-- Flashcards Embed -->\n<iframe src="flashcards_${(deck.title || 'deck').toLowerCase().replace(/[^a-z0-9]/gi, '_')}.html" width="100%" height="600" frameborder="0" style="border: 1px solid #e2e8f0; border-radius: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);" title="${safeTitle}"></iframe>`;
+  const size = deck.cardSize || 'medium';
+  const format = deck.cardAspectRatio || 'vertical';
+
+  let height = 430;
+  if (size === 'small') {
+    height = format === 'horizontal' ? 240 : format === 'square' ? 300 : 360;
+  } else if (size === 'large') {
+    height = format === 'horizontal' ? 360 : format === 'square' ? 460 : 540;
+  } else {
+    height = format === 'horizontal' ? 280 : format === 'square' ? 390 : 440;
+  }
+
+  return `<!-- Flashcards Embed -->\n<iframe src="flashcards_${(deck.title || 'deck').toLowerCase().replace(/[^a-z0-9]/gi, '_')}.html" width="100%" height="${height}" frameborder="0" style="border: none; border-radius: 16px; overflow: hidden; width: 100%; display: block;" title="${safeTitle}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
 }
 
 function escapeHTML(str: string): string {

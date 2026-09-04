@@ -19,11 +19,11 @@ const TEMPLATES = [
     cards: [
       {
         id: 'card-1',
-        title: 'Pergunta ou Título do Card',
-        text: 'Insira o contexto, pergunta ou situação problema que o colaborador deve analisar.',
+        title: 'Título do card 1',
+        text: 'Texto do card',
         imageUrl: '',
         backTitle: 'Resposta & Procedimento',
-        backText: 'Insira a resposta correta, a justificativa e o passo a passo de como agir.'
+        backText: 'Verso do Flashcard 1'
       }
     ]
   },

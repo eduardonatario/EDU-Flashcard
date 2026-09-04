@@ -64,8 +64,8 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={() => onChangeViewMode('player')}
               className={`px-3 sm:px-4 py-1.5 text-xs font-bold uppercase tracking-wider rounded-md transition-colors flex items-center gap-1.5 ${
                 viewMode === 'player'
-                  ? 'bg-white text-blue-600 shadow-2xs'
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               <Play className="w-3.5 h-3.5 fill-current" />
@@ -76,8 +76,8 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={() => onChangeViewMode('editor')}
               className={`px-3 sm:px-4 py-1.5 text-xs font-bold uppercase tracking-wider rounded-md transition-colors flex items-center gap-1.5 ${
                 viewMode === 'editor'
-                  ? 'bg-white text-blue-600 shadow-2xs'
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               <Settings className="w-3.5 h-3.5" />

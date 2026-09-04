@@ -17,8 +17,9 @@ export function parseVideoUrl(url: string, autoplay: boolean = true): VideoEmbed
   if (ytMatch && ytMatch[1]) {
     const videoId = ytMatch[1];
     // YouTube autoplay requires mute=1 in most browsers
-    const autoParam = autoplay ? '&autoplay=1&mute=1&loop=1&playlist=' + videoId : '&autoplay=0';
-    const embedUrl = `https://www.youtube.com/embed/${videoId}?enablejsapi=1${autoParam}&controls=1&modestbranding=1`;
+    const autoParam = autoplay ? 'autoplay=1&mute=1&loop=1&playlist=' + videoId : 'autoplay=0';
+    // Use youtube-nocookie.com with playsinline and rel=0; avoid enablejsapi=1 which triggers Error 153 in iframes
+    const embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?${autoParam}&controls=1&rel=0&playsinline=1`;
     return {
       type: 'youtube',
       embedUrl

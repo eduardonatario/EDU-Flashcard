@@ -54,6 +54,9 @@ export const CardEditor: React.FC<CardEditorProps> = ({
   const [deckBackCustomBgColor, setDeckBackCustomBgColor] = useState(deck.backCustomBgColor || '#ffffff');
   const [deckBackCustomTextColor, setDeckBackCustomTextColor] = useState(deck.backCustomTextColor || '#0f172a');
 
+  // Active side for card color customizer (Frente / Verso)
+  const [colorTargetSide, setColorTargetSide] = useState<'front' | 'back'>('front');
+
   const cards = deck.cards || [];
   const activeCardIndex = cards.findIndex((c) => c.id === selectedCardId);
   const activeCard = cards[activeCardIndex] || cards[0];
@@ -109,14 +112,33 @@ export const CardEditor: React.FC<CardEditorProps> = ({
 
   // Add a new blank card
   const handleAddCard = () => {
+    let nextNum = cards.length + 1;
+    let maxFound = 0;
+    cards.forEach((c) => {
+      const matchTitle = c.title?.match(/(?:Título do card|card)\s*(\d+)/i);
+      if (matchTitle) {
+        const val = parseInt(matchTitle[1], 10);
+        if (!isNaN(val) && val > maxFound) maxFound = val;
+      }
+      const matchBack = c.backText?.match(/(?:Verso do Flashcard|Flashcard)\s*(\d+)/i);
+      if (matchBack) {
+        const val = parseInt(matchBack[1], 10);
+        if (!isNaN(val) && val > maxFound) maxFound = val;
+      }
+    });
+
+    if (maxFound >= nextNum) {
+      nextNum = maxFound + 1;
+    }
+
     const newCard: Flashcard = {
       id: 'card-' + Date.now(),
-      title: 'Titulo frente',
-      text: 'Frente do Flashcard',
+      title: `Título do card ${nextNum}`,
+      text: 'Texto do card',
       imageUrl: '',
       imageAlt: '',
       backTitle: 'Título verso',
-      backText: 'Verso do Flashcard'
+      backText: `Verso do Flashcard ${nextNum}`
     };
 
     const updatedCards = [...cards, newCard];
@@ -139,12 +161,12 @@ export const CardEditor: React.FC<CardEditorProps> = ({
     if (cards.length <= 1) {
       const freshCard: Flashcard = {
         id: 'card-' + Date.now(),
-        title: 'Titulo frente',
-        text: 'Frente do Flashcard',
+        title: 'Título do card 1',
+        text: 'Texto do card',
         imageUrl: '',
         imageAlt: '',
         backTitle: 'Título verso',
-        backText: 'Verso do Flashcard'
+        backText: 'Verso do Flashcard 1'
       };
       onUpdateDeck({
         ...deck,
@@ -231,7 +253,7 @@ export const CardEditor: React.FC<CardEditorProps> = ({
           </label>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
           
           {/* Opção 1: Tamanho dos Cards */}
           <div className="space-y-1.5 p-3 rounded-xl bg-slate-50/80 border border-slate-200/80 h-full flex flex-col justify-between">
@@ -335,122 +357,52 @@ export const CardEditor: React.FC<CardEditorProps> = ({
             </div>
           </div>
 
-          {/* Opção 3: Cor da Frente */}
+          {/* Opção 3: Cor dos Cards (Frente e Verso) */}
           <div className="space-y-1.5 p-3 rounded-xl bg-slate-50/80 border border-slate-200/80 h-full flex flex-col justify-between">
-            <label className="block text-xs font-bold text-slate-700">
-              Cor da Frente
-            </label>
-            <div className="grid grid-cols-3 gap-1 pt-1">
-              <button
-                type="button"
-                onClick={() => {
-                  setDeckFrontBgType('white');
-                  updateDeckSettings({ frontBgType: 'white' });
-                }}
-                className={`py-2 px-1 rounded-lg border text-center transition-all text-xs ${
-                  deckFrontBgType === 'white'
-                    ? 'border-blue-600 bg-blue-600 text-white font-bold shadow-2xs'
-                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100 font-medium'
-                }`}
-              >
-                Branco
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setDeckFrontBgType('light-gray');
-                  updateDeckSettings({ frontBgType: 'light-gray' });
-                }}
-                className={`py-2 px-1 rounded-lg border text-center transition-all text-xs ${
-                  deckFrontBgType === 'light-gray'
-                    ? 'border-blue-600 bg-blue-600 text-white font-bold shadow-2xs'
-                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100 font-medium'
-                }`}
-              >
-                Cinza Claro
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setDeckFrontBgType('custom');
-                  updateDeckSettings({ frontBgType: 'custom' });
-                }}
-                className={`py-2 px-1 rounded-lg border text-center transition-all text-xs ${
-                  deckFrontBgType === 'custom'
-                    ? 'border-blue-600 bg-blue-600 text-white font-bold shadow-2xs'
-                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100 font-medium'
-                }`}
-              >
-                Personalizado
-              </button>
-            </div>
-
-            {deckFrontBgType === 'custom' && (
-              <div className="grid grid-cols-2 gap-2 p-2 bg-white rounded-lg border border-slate-200 mt-1.5">
-                <div>
-                  <label className="block text-[9px] font-bold text-slate-500 uppercase mb-0.5">Fundo</label>
-                  <div className="flex gap-1 items-center">
-                    <input
-                      type="color"
-                      value={deckFrontCustomBgColor}
-                      onChange={(e) => {
-                        setDeckFrontCustomBgColor(e.target.value);
-                        updateDeckSettings({ frontCustomBgColor: e.target.value });
-                      }}
-                      className="w-5 h-5 rounded border border-slate-300 cursor-pointer p-0 shrink-0"
-                    />
-                    <input
-                      type="text"
-                      value={deckFrontCustomBgColor}
-                      onChange={(e) => {
-                        setDeckFrontCustomBgColor(e.target.value);
-                        updateDeckSettings({ frontCustomBgColor: e.target.value });
-                      }}
-                      className="w-full px-1 py-0.5 text-[10px] border border-slate-300 rounded font-mono"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-[9px] font-bold text-slate-500 uppercase mb-0.5">Texto</label>
-                  <div className="flex gap-1 items-center">
-                    <input
-                      type="color"
-                      value={deckFrontCustomTextColor}
-                      onChange={(e) => {
-                        setDeckFrontCustomTextColor(e.target.value);
-                        updateDeckSettings({ frontCustomTextColor: e.target.value });
-                      }}
-                      className="w-5 h-5 rounded border border-slate-300 cursor-pointer p-0 shrink-0"
-                    />
-                    <input
-                      type="text"
-                      value={deckFrontCustomTextColor}
-                      onChange={(e) => {
-                        setDeckFrontCustomTextColor(e.target.value);
-                        updateDeckSettings({ frontCustomTextColor: e.target.value });
-                      }}
-                      className="w-full px-1 py-0.5 text-[10px] border border-slate-300 rounded font-mono"
-                    />
-                  </div>
-                </div>
+            <div className="flex items-center justify-between gap-1">
+              <label className="block text-xs font-bold text-slate-700">
+                Cor dos Cards
+              </label>
+              <div className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-100 p-0.5 text-[11px]">
+                <button
+                  type="button"
+                  onClick={() => setColorTargetSide('front')}
+                  className={`px-2 py-0.5 rounded-md font-bold transition-all ${
+                    colorTargetSide === 'front'
+                      ? 'bg-blue-600 text-white shadow-2xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Frente
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setColorTargetSide('back')}
+                  className={`px-2 py-0.5 rounded-md font-bold transition-all ${
+                    colorTargetSide === 'back'
+                      ? 'bg-blue-600 text-white shadow-2xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Verso
+                </button>
               </div>
-            )}
-          </div>
+            </div>
 
-            {/* Opção 4: Cor do Verso */}
-          <div className="space-y-1.5 p-3 rounded-xl bg-slate-50/80 border border-slate-200/80 h-full flex flex-col justify-between">
-            <label className="block text-xs font-bold text-slate-700">
-              Cor do Verso (Ao Virar)
-            </label>
             <div className="grid grid-cols-3 gap-1 pt-1">
               <button
                 type="button"
                 onClick={() => {
-                  setDeckBackBgType('white');
-                  updateDeckSettings({ backBgType: 'white' });
+                  if (colorTargetSide === 'front') {
+                    setDeckFrontBgType('white');
+                    updateDeckSettings({ frontBgType: 'white' });
+                  } else {
+                    setDeckBackBgType('white');
+                    updateDeckSettings({ backBgType: 'white' });
+                  }
                 }}
                 className={`py-2 px-1 rounded-lg border text-center transition-all text-xs ${
-                  deckBackBgType === 'white'
+                  (colorTargetSide === 'front' ? deckFrontBgType === 'white' : deckBackBgType === 'white')
                     ? 'border-blue-600 bg-blue-600 text-white font-bold shadow-2xs'
                     : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100 font-medium'
                 }`}
@@ -460,53 +412,75 @@ export const CardEditor: React.FC<CardEditorProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  setDeckBackBgType('light-gray');
-                  updateDeckSettings({ backBgType: 'light-gray' });
+                  if (colorTargetSide === 'front') {
+                    setDeckFrontBgType('light-gray');
+                    updateDeckSettings({ frontBgType: 'light-gray' });
+                  } else {
+                    setDeckBackBgType('light-gray');
+                    updateDeckSettings({ backBgType: 'light-gray' });
+                  }
                 }}
                 className={`py-2 px-1 rounded-lg border text-center transition-all text-xs ${
-                  deckBackBgType === 'light-gray'
+                  (colorTargetSide === 'front' ? deckFrontBgType === 'light-gray' : deckBackBgType === 'light-gray')
                     ? 'border-blue-600 bg-blue-600 text-white font-bold shadow-2xs'
                     : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100 font-medium'
                 }`}
               >
-                Cinza Claro
+                Cinza
               </button>
               <button
                 type="button"
                 onClick={() => {
-                  setDeckBackBgType('custom');
-                  updateDeckSettings({ backBgType: 'custom' });
+                  if (colorTargetSide === 'front') {
+                    setDeckFrontBgType('custom');
+                    updateDeckSettings({ frontBgType: 'custom' });
+                  } else {
+                    setDeckBackBgType('custom');
+                    updateDeckSettings({ backBgType: 'custom' });
+                  }
                 }}
                 className={`py-2 px-1 rounded-lg border text-center transition-all text-xs ${
-                  deckBackBgType === 'custom'
+                  (colorTargetSide === 'front' ? deckFrontBgType === 'custom' : deckBackBgType === 'custom')
                     ? 'border-blue-600 bg-blue-600 text-white font-bold shadow-2xs'
                     : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100 font-medium'
                 }`}
               >
-                Personalizado
+                Personalizar
               </button>
             </div>
 
-            {deckBackBgType === 'custom' && (
+            {(colorTargetSide === 'front' ? deckFrontBgType === 'custom' : deckBackBgType === 'custom') && (
               <div className="grid grid-cols-2 gap-2 p-2 bg-white rounded-lg border border-slate-200 mt-1.5">
                 <div>
                   <label className="block text-[9px] font-bold text-slate-500 uppercase mb-0.5">Fundo</label>
                   <div className="flex gap-1 items-center">
                     <input
                       type="color"
-                      value={deckBackCustomBgColor}
+                      value={colorTargetSide === 'front' ? deckFrontCustomBgColor : deckBackCustomBgColor}
                       onChange={(e) => {
-                        setDeckBackCustomBgColor(e.target.value);
-                        updateDeckSettings({ backCustomBgColor: e.target.value });
+                        const val = e.target.value;
+                        if (colorTargetSide === 'front') {
+                          setDeckFrontCustomBgColor(val);
+                          updateDeckSettings({ frontCustomBgColor: val });
+                        } else {
+                          setDeckBackCustomBgColor(val);
+                          updateDeckSettings({ backCustomBgColor: val });
+                        }
                       }}
                       className="w-5 h-5 rounded border border-slate-300 cursor-pointer p-0 shrink-0"
                     />
                     <input
                       type="text"
-                      value={deckBackCustomBgColor}
+                      value={colorTargetSide === 'front' ? deckFrontCustomBgColor : deckBackCustomBgColor}
                       onChange={(e) => {
-                        setDeckBackCustomBgColor(e.target.value);
-                        updateDeckSettings({ backCustomBgColor: e.target.value });
+                        const val = e.target.value;
+                        if (colorTargetSide === 'front') {
+                          setDeckFrontCustomBgColor(val);
+                          updateDeckSettings({ frontCustomBgColor: val });
+                        } else {
+                          setDeckBackCustomBgColor(val);
+                          updateDeckSettings({ backCustomBgColor: val });
+                        }
                       }}
                       className="w-full px-1 py-0.5 text-[10px] border border-slate-300 rounded font-mono"
                     />
@@ -517,19 +491,31 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                   <div className="flex gap-1 items-center">
                     <input
                       type="color"
-                      value={deckBackCustomTextColor}
+                      value={colorTargetSide === 'front' ? deckFrontCustomTextColor : deckBackCustomTextColor}
                       onChange={(e) => {
-                        setDeckBackCustomTextColor(e.target.value);
-                        updateDeckSettings({ backCustomTextColor: e.target.value });
+                        const val = e.target.value;
+                        if (colorTargetSide === 'front') {
+                          setDeckFrontCustomTextColor(val);
+                          updateDeckSettings({ frontCustomTextColor: val });
+                        } else {
+                          setDeckBackCustomTextColor(val);
+                          updateDeckSettings({ backCustomTextColor: val });
+                        }
                       }}
                       className="w-5 h-5 rounded border border-slate-300 cursor-pointer p-0 shrink-0"
                     />
                     <input
                       type="text"
-                      value={deckBackCustomTextColor}
+                      value={colorTargetSide === 'front' ? deckFrontCustomTextColor : deckBackCustomTextColor}
                       onChange={(e) => {
-                        setDeckBackCustomTextColor(e.target.value);
-                        updateDeckSettings({ backCustomTextColor: e.target.value });
+                        const val = e.target.value;
+                        if (colorTargetSide === 'front') {
+                          setDeckFrontCustomTextColor(val);
+                          updateDeckSettings({ frontCustomTextColor: val });
+                        } else {
+                          setDeckBackCustomTextColor(val);
+                          updateDeckSettings({ backCustomTextColor: val });
+                        }
                       }}
                       className="w-full px-1 py-0.5 text-[10px] border border-slate-300 rounded font-mono"
                     />
@@ -643,8 +629,8 @@ export const CardEditor: React.FC<CardEditorProps> = ({
             </div>
           </div>
 
-          {/* CENTER COLUMN: CARD FORM EDITING (4 cols) */}
-          <div className="lg:col-span-4 bg-white rounded-2xl border border-slate-200 shadow-2xs p-6 space-y-6">
+          {/* CENTER / RIGHT COLUMN: CARD FORM EDITING (8 cols) */}
+          <div className="lg:col-span-8 bg-white rounded-2xl border border-slate-200 shadow-2xs p-6 sm:p-8 space-y-6">
             {activeCard ? (
               <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
                 
@@ -659,12 +645,12 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                         <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider">Frente do Card</h3>
                       </div>
 
-                      {/* Tipo de conteúdo Frente - 2 rows grid */}
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 bg-slate-100 p-1.5 rounded-xl">
+                      {/* Tipo de conteúdo Frente - aligned on a single row */}
+                      <div className="grid grid-cols-4 gap-1 bg-slate-100 p-1 rounded-xl">
                         <button
                           type="button"
                           onClick={() => handleUpdateCard('frontContentType', 'text')}
-                          className={`py-2 px-3 text-xs font-bold rounded-lg transition-all ${
+                          className={`py-2 px-1 text-[11px] sm:text-xs font-bold rounded-lg transition-all text-center whitespace-nowrap ${
                             activeCard.frontContentType === 'text' || (!activeCard.frontContentType && !activeCard.imageUrl && !activeCard.videoUrl) ? 'bg-white text-blue-600 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
                           }`}
                         >
@@ -678,7 +664,7 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                               imageUrl: activeCard.imageUrl || ABSTRACT_EXAMPLE_IMAGES[0]
                             });
                           }}
-                          className={`py-2 px-3 text-xs font-bold rounded-lg transition-all ${
+                          className={`py-2 px-1 text-[11px] sm:text-xs font-bold rounded-lg transition-all text-center whitespace-nowrap ${
                             activeCard.frontContentType === 'image' ? 'bg-white text-blue-600 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
                           }`}
                         >
@@ -692,11 +678,11 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                               imageUrl: activeCard.imageUrl || ABSTRACT_EXAMPLE_IMAGES[0]
                             });
                           }}
-                          className={`py-2 px-3 text-xs font-bold rounded-lg transition-all ${
+                          className={`py-2 px-1 text-[11px] sm:text-xs font-bold rounded-lg transition-all text-center whitespace-nowrap ${
                             activeCard.frontContentType === 'image-text' || (!activeCard.frontContentType && !!activeCard.imageUrl) ? 'bg-white text-blue-600 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
                           }`}
                         >
-                          Img + Texto
+                          Imagem + Texto
                         </button>
                         <button
                           type="button"
@@ -706,27 +692,11 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                               videoUrl: activeCard.videoUrl || ''
                             });
                           }}
-                          className={`py-2 px-3 text-xs font-bold rounded-lg transition-all ${
+                          className={`py-2 px-1 text-[11px] sm:text-xs font-bold rounded-lg transition-all text-center whitespace-nowrap ${
                             activeCard.frontContentType === 'video' ? 'bg-white text-blue-600 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
                           }`}
                         >
                           Vídeo
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            handleUpdateCard({
-                              frontContentType: 'read',
-                              frontReadAutoplay: activeCard.frontReadAutoplay !== false,
-                              frontReadLang: activeCard.frontReadLang || 'pt-BR',
-                              frontShowPlayButton: activeCard.frontShowPlayButton !== false
-                            });
-                          }}
-                          className={`py-2 px-3 text-xs font-bold rounded-lg transition-all col-span-2 sm:col-span-1 ${
-                            activeCard.frontContentType === 'read' ? 'bg-white text-blue-600 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
-                          }`}
-                        >
-                          Ler card
                         </button>
                       </div>
                     </div>
@@ -854,8 +824,23 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                             value={activeCard.frontReadImageUrl || ''}
                             onChange={(e) => handleUpdateCard('frontReadImageUrl', e.target.value)}
                             placeholder="https://exemplo.com/imagem.jpg"
-                            className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden bg-white"
+                            className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden bg-white mb-2"
                           />
+                          <div className="flex flex-wrap gap-1.5">
+                            {ABSTRACT_EXAMPLE_IMAGES.map((imgUrl, i) => (
+                              <button
+                                key={i}
+                                type="button"
+                                onClick={() => handleUpdateCard('frontReadImageUrl', imgUrl)}
+                                className={`relative w-8 h-8 rounded-lg overflow-hidden border transition-all hover:scale-105 shrink-0 ${
+                                  activeCard.frontReadImageUrl === imgUrl ? 'border-blue-600 ring-2 ring-blue-600/30' : 'border-slate-200'
+                                }`}
+                                title={`Exemplo ${i + 1}`}
+                              >
+                                <img src={imgUrl} alt="" className="w-full h-full object-cover" />
+                              </button>
+                            ))}
+                          </div>
                         </div>
                         <div>
                           <label className="block text-[11px] font-bold text-slate-700 mb-1">
@@ -874,9 +859,20 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                     ) : activeCard.frontContentType === 'video' ? (
                       <div className="space-y-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
                         <div>
-                          <label className="block text-xs font-bold text-slate-700 mb-1">
-                            URL do Vídeo da Frente (YouTube, MP4, etc.) *
-                          </label>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <label className="block text-xs font-bold text-slate-700">
+                              URL do Vídeo da Frente (YouTube, MP4, etc.) *
+                            </label>
+                            <label className="inline-flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-slate-700 select-none">
+                              <input
+                                type="checkbox"
+                                checked={activeCard.videoAutoplay !== false}
+                                onChange={(e) => handleUpdateCard('videoAutoplay', e.target.checked)}
+                                className="w-3.5 h-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                              />
+                              Auto play
+                            </label>
+                          </div>
                           <div className="relative">
                             <input
                               type="url"
@@ -886,35 +882,6 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                               className="w-full pl-8 pr-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden"
                             />
                             <LinkIcon className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
-                          </div>
-                        </div>
-                        <div>
-                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                            Configuração de Reprodução
-                          </label>
-                          <div className="grid grid-cols-2 gap-2">
-                            <button
-                              type="button"
-                              onClick={() => handleUpdateCard('videoAutoplay', true)}
-                              className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
-                                activeCard.videoAutoplay !== false
-                                  ? 'bg-blue-600 border-blue-600 text-white shadow-2xs'
-                                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
-                              }`}
-                            >
-                              Auto play
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleUpdateCard('videoAutoplay', false)}
-                              className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
-                                activeCard.videoAutoplay === false
-                                  ? 'bg-blue-600 border-blue-600 text-white shadow-2xs'
-                                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
-                              }`}
-                            >
-                              Aguardar play
-                            </button>
                           </div>
                         </div>
                       </div>
@@ -930,7 +897,7 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                             onChange={(e) => {
                               handleUpdateCard('title', e.target.value);
                             }}
-                            placeholder="Ex: Título ou Pergunta principal..."
+                            placeholder="Título do card"
                             className="w-full px-3.5 py-2.5 text-base font-extrabold border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden"
                           />
                         </div>
@@ -944,9 +911,88 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                             onChange={(e) => {
                               handleUpdateCard('text', e.target.value);
                             }}
-                            placeholder="Ex: Detalhamento, dica ou subtítulo explicativo..."
+                            placeholder="Texto do card"
                             className="w-full px-3.5 py-2 text-sm font-medium border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden leading-relaxed"
                           />
+                        </div>
+                        {/* Áudio / Ler Card para texto */}
+                        <div className="pt-3 border-t border-slate-200 space-y-2.5">
+                          <div className="flex items-center justify-between flex-wrap gap-2">
+                            <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+                              Áudio / Ler Card
+                            </label>
+                            <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
+                              {activeCard.frontAudioEnabled === true && (
+                                <>
+                                  <div className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-100 p-0.5 text-[11px]">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleUpdateCard('frontReadLang', 'pt-BR')}
+                                      className={`px-2 py-0.5 rounded-md font-bold transition-all ${
+                                        (activeCard.frontReadLang || 'pt-BR') === 'pt-BR'
+                                          ? 'bg-blue-600 text-white shadow-2xs'
+                                          : 'text-slate-600 hover:text-slate-900'
+                                      }`}
+                                    >
+                                      Português
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleUpdateCard('frontReadLang', 'en-US')}
+                                      className={`px-2 py-0.5 rounded-md font-bold transition-all ${
+                                        activeCard.frontReadLang === 'en-US'
+                                          ? 'bg-blue-600 text-white shadow-2xs'
+                                          : 'text-slate-600 hover:text-slate-900'
+                                      }`}
+                                    >
+                                      Inglês
+                                    </button>
+                                  </div>
+
+                                  <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-bold text-slate-600 select-none">
+                                    <input
+                                      type="checkbox"
+                                      checked={activeCard.frontReadAutoplay !== false}
+                                      onChange={(e) => handleUpdateCard('frontReadAutoplay', e.target.checked)}
+                                      className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5 cursor-pointer"
+                                    />
+                                    <span>Auto play</span>
+                                  </label>
+
+                                  <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-bold text-slate-600 select-none">
+                                    <input
+                                      type="checkbox"
+                                      checked={activeCard.frontShowPlayButton !== false}
+                                      onChange={(e) => handleUpdateCard('frontShowPlayButton', e.target.checked)}
+                                      className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5 cursor-pointer"
+                                    />
+                                    <span>Exibir Play</span>
+                                  </label>
+                                </>
+                              )}
+                              <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={activeCard.frontAudioEnabled === true}
+                                  onChange={(e) => handleUpdateCard('frontAudioEnabled', e.target.checked)}
+                                  className="sr-only peer"
+                                />
+                                <div className="w-7 h-4 bg-slate-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-blue-600"></div>
+                              </label>
+                            </div>
+                          </div>
+                          {activeCard.frontAudioEnabled === true && (
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-600 mb-1">URL do arquivo MP3 (Opcional - se vazio, lê com a voz do navegador)</label>
+                              <input
+                                type="text"
+                                value={activeCard.frontAudioUrl || ''}
+                                onChange={(e) => handleUpdateCard('frontAudioUrl', e.target.value)}
+                                placeholder="https://exemplo.com/audio.mp3"
+                                className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden bg-white"
+                              />
+                            </div>
+                          )}
                         </div>
                       </div>
                     ) : (
@@ -963,7 +1009,7 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                               title: e.target.value
                             });
                           }}
-                          placeholder="Ex: Pergunta do flashcard"
+                          placeholder="Título do card"
                           className="w-full px-3.5 py-2.5 text-sm font-medium border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden"
                         />
                       </div>
@@ -1032,7 +1078,7 @@ export const CardEditor: React.FC<CardEditorProps> = ({
 
                         <div>
                           <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                            Exemplos de Imagens Abstratas (1-clique)
+                            Exemplos de Imagens
                           </span>
                           <div className="flex flex-wrap gap-2">
                             {ABSTRACT_EXAMPLE_IMAGES.map((imgUrl, i) => (
@@ -1055,6 +1101,88 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                             ))}
                           </div>
                         </div>
+
+                        {/* Áudio em Segundo Plano / Ler Card para imagem */}
+                        {activeCard.frontContentType === 'image' && (
+                          <div className="pt-3 border-t border-slate-200 space-y-2.5">
+                            <div className="flex items-center justify-between flex-wrap gap-2">
+                              <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+                                Áudio / Ler Card
+                              </label>
+                              <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
+                                {activeCard.frontAudioEnabled === true && (
+                                  <>
+                                    <div className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-100 p-0.5 text-[11px]">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleUpdateCard('frontReadLang', 'pt-BR')}
+                                        className={`px-2 py-0.5 rounded-md font-bold transition-all ${
+                                          (activeCard.frontReadLang || 'pt-BR') === 'pt-BR'
+                                            ? 'bg-blue-600 text-white shadow-2xs'
+                                            : 'text-slate-600 hover:text-slate-900'
+                                        }`}
+                                      >
+                                        Português
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleUpdateCard('frontReadLang', 'en-US')}
+                                        className={`px-2 py-0.5 rounded-md font-bold transition-all ${
+                                          activeCard.frontReadLang === 'en-US'
+                                            ? 'bg-blue-600 text-white shadow-2xs'
+                                            : 'text-slate-600 hover:text-slate-900'
+                                        }`}
+                                      >
+                                        Inglês
+                                      </button>
+                                    </div>
+
+                                    <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-bold text-slate-600 select-none">
+                                      <input
+                                        type="checkbox"
+                                        checked={activeCard.frontReadAutoplay !== false}
+                                        onChange={(e) => handleUpdateCard('frontReadAutoplay', e.target.checked)}
+                                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5 cursor-pointer"
+                                      />
+                                      <span>Auto play</span>
+                                    </label>
+
+                                    <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-bold text-slate-600 select-none">
+                                      <input
+                                        type="checkbox"
+                                        checked={activeCard.frontShowPlayButton !== false}
+                                        onChange={(e) => handleUpdateCard('frontShowPlayButton', e.target.checked)}
+                                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5 cursor-pointer"
+                                      />
+                                      <span>Exibir Play</span>
+                                    </label>
+                                  </>
+                                )}
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={activeCard.frontAudioEnabled === true}
+                                    onChange={(e) => handleUpdateCard('frontAudioEnabled', e.target.checked)}
+                                    className="sr-only peer"
+                                  />
+                                  <div className="w-7 h-4 bg-slate-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                              </div>
+                            </div>
+                            {activeCard.frontAudioEnabled === true && (
+                              <div>
+                                <label className="block text-[10px] font-bold text-slate-600 mb-1">URL do arquivo MP3 (Opcional - se vazio, lê com a voz do navegador)</label>
+                                <input
+                                  type="text"
+                                  value={activeCard.frontAudioUrl || ''}
+                                  onChange={(e) => handleUpdateCard('frontAudioUrl', e.target.value)}
+                                  placeholder="https://exemplo.com/audio.mp3"
+                                  className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden bg-white"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1069,12 +1197,12 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                         <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider">Verso do Card</h3>
                       </div>
 
-                      {/* Tipo de conteúdo Verso - 2 rows grid */}
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 bg-slate-100 p-1.5 rounded-xl">
+                      {/* Tipo de conteúdo Verso - aligned on a single row */}
+                      <div className="grid grid-cols-4 gap-1 bg-slate-100 p-1 rounded-xl">
                         <button
                           type="button"
                           onClick={() => handleUpdateCard('backContentType', 'text')}
-                          className={`py-2 px-3 text-xs font-bold rounded-lg transition-all ${
+                          className={`py-2 px-1 text-[11px] sm:text-xs font-bold rounded-lg transition-all text-center whitespace-nowrap ${
                             activeCard.backContentType === 'text' || (!activeCard.backContentType && !activeCard.backImageUrl && !activeCard.backVideoUrl) ? 'bg-white text-emerald-600 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
                           }`}
                         >
@@ -1088,7 +1216,7 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                               backImageUrl: activeCard.backImageUrl || ABSTRACT_EXAMPLE_IMAGES[1]
                             });
                           }}
-                          className={`py-2 px-3 text-xs font-bold rounded-lg transition-all ${
+                          className={`py-2 px-1 text-[11px] sm:text-xs font-bold rounded-lg transition-all text-center whitespace-nowrap ${
                             activeCard.backContentType === 'image' ? 'bg-white text-emerald-600 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
                           }`}
                         >
@@ -1102,11 +1230,11 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                               backImageUrl: activeCard.backImageUrl || ABSTRACT_EXAMPLE_IMAGES[1]
                             });
                           }}
-                          className={`py-2 px-3 text-xs font-bold rounded-lg transition-all ${
+                          className={`py-2 px-1 text-[11px] sm:text-xs font-bold rounded-lg transition-all text-center whitespace-nowrap ${
                             activeCard.backContentType === 'image-text' || (!activeCard.backContentType && !!activeCard.backImageUrl) ? 'bg-white text-emerald-600 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
                           }`}
                         >
-                          Img + Texto
+                          Imagem + Texto
                         </button>
                         <button
                           type="button"
@@ -1116,27 +1244,11 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                               backVideoUrl: activeCard.backVideoUrl || ''
                             });
                           }}
-                          className={`py-2 px-3 text-xs font-bold rounded-lg transition-all ${
+                          className={`py-2 px-1 text-[11px] sm:text-xs font-bold rounded-lg transition-all text-center whitespace-nowrap ${
                             activeCard.backContentType === 'video' ? 'bg-white text-emerald-600 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
                           }`}
                         >
                           Vídeo
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            handleUpdateCard({
-                              backContentType: 'read',
-                              backReadAutoplay: activeCard.backReadAutoplay !== false,
-                              backReadLang: activeCard.backReadLang || 'pt-BR',
-                              backShowPlayButton: activeCard.backShowPlayButton !== false
-                            });
-                          }}
-                          className={`py-2 px-3 text-xs font-bold rounded-lg transition-all col-span-2 sm:col-span-1 ${
-                            activeCard.backContentType === 'read' ? 'bg-white text-emerald-600 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
-                          }`}
-                        >
-                          Ler card
                         </button>
                       </div>
                     </div>
@@ -1264,8 +1376,23 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                             value={activeCard.backReadImageUrl || ''}
                             onChange={(e) => handleUpdateCard('backReadImageUrl', e.target.value)}
                             placeholder="https://exemplo.com/imagem.jpg"
-                            className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-hidden bg-white"
+                            className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-hidden bg-white mb-2"
                           />
+                          <div className="flex flex-wrap gap-1.5">
+                            {ABSTRACT_EXAMPLE_IMAGES.map((imgUrl, i) => (
+                              <button
+                                key={i}
+                                type="button"
+                                onClick={() => handleUpdateCard('backReadImageUrl', imgUrl)}
+                                className={`relative w-8 h-8 rounded-lg overflow-hidden border transition-all hover:scale-105 shrink-0 ${
+                                  activeCard.backReadImageUrl === imgUrl ? 'border-emerald-600 ring-2 ring-emerald-600/30' : 'border-slate-200'
+                                }`}
+                                title={`Exemplo ${i + 1}`}
+                              >
+                                <img src={imgUrl} alt="" className="w-full h-full object-cover" />
+                              </button>
+                            ))}
+                          </div>
                         </div>
                         <div>
                           <label className="block text-[11px] font-bold text-slate-700 mb-1">
@@ -1284,47 +1411,29 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                     ) : activeCard.backContentType === 'video' ? (
                       <div className="space-y-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
                         <div>
-                          <label className="block text-xs font-bold text-slate-700 mb-1">
-                            URL do Vídeo do Verso (YouTube, MP4, etc.) *
-                          </label>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <label className="block text-xs font-bold text-slate-700">
+                              URL do Vídeo do Verso (YouTube, MP4, etc.) *
+                            </label>
+                            <label className="inline-flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-slate-700 select-none">
+                              <input
+                                type="checkbox"
+                                checked={activeCard.backVideoAutoplay !== false}
+                                onChange={(e) => handleUpdateCard('backVideoAutoplay', e.target.checked)}
+                                className="w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                              />
+                              Auto play
+                            </label>
+                          </div>
                           <div className="relative">
                             <input
                               type="url"
                               value={activeCard.backVideoUrl || ''}
                               onChange={(e) => handleUpdateCard('backVideoUrl', e.target.value)}
                               placeholder="https://www.youtube.com/watch?v=..."
-                              className="w-full pl-8 pr-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden"
+                              className="w-full pl-8 pr-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-hidden"
                             />
                             <LinkIcon className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
-                          </div>
-                        </div>
-                        <div>
-                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                            Configuração de Reprodução
-                          </label>
-                          <div className="grid grid-cols-2 gap-2">
-                            <button
-                              type="button"
-                              onClick={() => handleUpdateCard('backVideoAutoplay', true)}
-                              className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
-                                activeCard.backVideoAutoplay !== false
-                                  ? 'bg-emerald-600 border-emerald-600 text-white shadow-2xs'
-                                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
-                              }`}
-                            >
-                              Auto play
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleUpdateCard('backVideoAutoplay', false)}
-                              className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
-                                activeCard.backVideoAutoplay === false
-                                  ? 'bg-emerald-600 border-emerald-600 text-white shadow-2xs'
-                                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
-                              }`}
-                            >
-                              Aguardar play
-                            </button>
                           </div>
                         </div>
                       </div>
@@ -1358,11 +1467,90 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                             className="w-full px-3.5 py-2 text-sm font-medium border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden leading-relaxed"
                           />
                         </div>
+                        {/* Áudio / Ler Card para verso */}
+                        <div className="pt-3 border-t border-slate-200 space-y-2.5">
+                          <div className="flex items-center justify-between flex-wrap gap-2">
+                            <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+                              Áudio / Ler Card
+                            </label>
+                            <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
+                              {activeCard.backAudioEnabled === true && (
+                                <>
+                                  <div className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-100 p-0.5 text-[11px]">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleUpdateCard('backReadLang', 'pt-BR')}
+                                      className={`px-2 py-0.5 rounded-md font-bold transition-all ${
+                                        (activeCard.backReadLang || 'pt-BR') === 'pt-BR'
+                                          ? 'bg-emerald-600 text-white shadow-2xs'
+                                          : 'text-slate-600 hover:text-slate-900'
+                                      }`}
+                                    >
+                                      Português
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleUpdateCard('backReadLang', 'en-US')}
+                                      className={`px-2 py-0.5 rounded-md font-bold transition-all ${
+                                        activeCard.backReadLang === 'en-US'
+                                          ? 'bg-emerald-600 text-white shadow-2xs'
+                                          : 'text-slate-600 hover:text-slate-900'
+                                      }`}
+                                    >
+                                      Inglês
+                                    </button>
+                                  </div>
+
+                                  <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-bold text-slate-600 select-none">
+                                    <input
+                                      type="checkbox"
+                                      checked={activeCard.backReadAutoplay !== false}
+                                      onChange={(e) => handleUpdateCard('backReadAutoplay', e.target.checked)}
+                                      className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5 cursor-pointer"
+                                    />
+                                    <span>Auto play</span>
+                                  </label>
+
+                                  <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-bold text-slate-600 select-none">
+                                    <input
+                                      type="checkbox"
+                                      checked={activeCard.backShowPlayButton !== false}
+                                      onChange={(e) => handleUpdateCard('backShowPlayButton', e.target.checked)}
+                                      className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5 cursor-pointer"
+                                    />
+                                    <span>Exibir Play</span>
+                                  </label>
+                                </>
+                              )}
+                              <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={activeCard.backAudioEnabled === true}
+                                  onChange={(e) => handleUpdateCard('backAudioEnabled', e.target.checked)}
+                                  className="sr-only peer"
+                                />
+                                <div className="w-7 h-4 bg-slate-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-600"></div>
+                              </label>
+                            </div>
+                          </div>
+                          {activeCard.backAudioEnabled === true && (
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-600 mb-1">URL do arquivo MP3 (Opcional - se vazio, lê com a voz do navegador)</label>
+                              <input
+                                type="text"
+                                value={activeCard.backAudioUrl || ''}
+                                onChange={(e) => handleUpdateCard('backAudioUrl', e.target.value)}
+                                placeholder="https://exemplo.com/audio.mp3"
+                                className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-hidden bg-white"
+                              />
+                            </div>
+                          )}
+                        </div>
                       </div>
                     ) : (
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-1">
-                          Texto Curto do Verso (Opcional / Backup)
+                          Texto Curto do Verso do card
                         </label>
                         <input
                           type="text"
@@ -1442,7 +1630,7 @@ export const CardEditor: React.FC<CardEditorProps> = ({
 
                         <div>
                           <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                            Exemplos de Imagens Abstratas (1-clique)
+                            Exemplos de Imagens
                           </span>
                           <div className="flex flex-wrap gap-2">
                             {ABSTRACT_EXAMPLE_IMAGES.map((imgUrl, i) => (
@@ -1465,6 +1653,88 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                             ))}
                           </div>
                         </div>
+
+                        {/* Áudio em Segundo Plano / Ler Card para imagem verso */}
+                        {activeCard.backContentType === 'image' && (
+                          <div className="pt-3 border-t border-slate-200 space-y-2.5">
+                            <div className="flex items-center justify-between flex-wrap gap-2">
+                              <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+                                Áudio / Ler Card
+                              </label>
+                              <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
+                                {activeCard.backAudioEnabled === true && (
+                                  <>
+                                    <div className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-100 p-0.5 text-[11px]">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleUpdateCard('backReadLang', 'pt-BR')}
+                                        className={`px-2 py-0.5 rounded-md font-bold transition-all ${
+                                          (activeCard.backReadLang || 'pt-BR') === 'pt-BR'
+                                            ? 'bg-emerald-600 text-white shadow-2xs'
+                                            : 'text-slate-600 hover:text-slate-900'
+                                        }`}
+                                      >
+                                        Português
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleUpdateCard('backReadLang', 'en-US')}
+                                        className={`px-2 py-0.5 rounded-md font-bold transition-all ${
+                                          activeCard.backReadLang === 'en-US'
+                                            ? 'bg-emerald-600 text-white shadow-2xs'
+                                            : 'text-slate-600 hover:text-slate-900'
+                                        }`}
+                                      >
+                                        Inglês
+                                      </button>
+                                    </div>
+
+                                    <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-bold text-slate-600 select-none">
+                                      <input
+                                        type="checkbox"
+                                        checked={activeCard.backReadAutoplay !== false}
+                                        onChange={(e) => handleUpdateCard('backReadAutoplay', e.target.checked)}
+                                        className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5 cursor-pointer"
+                                      />
+                                      <span>Auto play</span>
+                                    </label>
+
+                                    <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-bold text-slate-600 select-none">
+                                      <input
+                                        type="checkbox"
+                                        checked={activeCard.backShowPlayButton !== false}
+                                        onChange={(e) => handleUpdateCard('backShowPlayButton', e.target.checked)}
+                                        className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5 cursor-pointer"
+                                      />
+                                      <span>Exibir Play</span>
+                                    </label>
+                                  </>
+                                )}
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={activeCard.backAudioEnabled === true}
+                                    onChange={(e) => handleUpdateCard('backAudioEnabled', e.target.checked)}
+                                    className="sr-only peer"
+                                  />
+                                  <div className="w-7 h-4 bg-slate-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-600"></div>
+                                </label>
+                              </div>
+                            </div>
+                            {activeCard.backAudioEnabled === true && (
+                              <div>
+                                <label className="block text-[10px] font-bold text-slate-600 mb-1">URL do arquivo MP3 (Opcional - se vazio, lê com a voz do navegador)</label>
+                                <input
+                                  type="text"
+                                  value={activeCard.backAudioUrl || ''}
+                                  onChange={(e) => handleUpdateCard('backAudioUrl', e.target.value)}
+                                  placeholder="https://exemplo.com/audio.mp3"
+                                  className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-hidden bg-white"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1476,224 +1746,6 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                 Selecione um card à esquerda para editar seus dados.
               </div>
             )}
-          </div>
-
-          {/* RIGHT COLUMN: LIVE INTERACTIVE CARD PREVIEW (4 cols) */}
-          <div className="lg:col-span-4 bg-slate-100/70 rounded-2xl border border-slate-200 p-5 sticky top-24">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                Visualização ao Vivo
-              </span>
-
-              <button
-                type="button"
-                onClick={() => setPreviewFlipped(!previewFlipped)}
-                className="text-xs font-bold text-blue-700 bg-blue-100 hover:bg-blue-200 px-2.5 py-1 rounded-lg flex items-center gap-1 transition-colors"
-              >
-                <RotateCw className="w-3 h-3" />
-                <span>{previewFlipped ? 'Ver Frente' : 'Ver Verso'}</span>
-              </button>
-            </div>
-
-            {activeCard && (() => {
-              const frontIsRead = activeCard.frontContentType === 'read';
-              const frontIsImage = !frontIsRead && activeCard.frontContentType === 'image' && !!activeCard.imageUrl;
-              const frontIsImageText = !frontIsRead && !frontIsImage && (activeCard.frontContentType === 'image-text' || (!activeCard.frontContentType && !!activeCard.imageUrl)) && !!activeCard.imageUrl;
-              const frontIsTextOnly = !frontIsRead && !frontIsImage && !frontIsImageText;
-
-              const backIsRead = activeCard.backContentType === 'read';
-              const backIsImage = !backIsRead && activeCard.backContentType === 'image' && !!activeCard.backImageUrl;
-              const backIsImageText = !backIsRead && !backIsImage && (activeCard.backContentType === 'image-text' || (!activeCard.backContentType && !!activeCard.backImageUrl)) && !!activeCard.backImageUrl;
-              const backIsTextOnly = !backIsRead && !backIsImage && !backIsImageText;
-
-              return (
-                <div className={`perspective-1000 w-full ${
-                  deckAspectRatio === 'square' 
-                    ? deckCardSize === 'small' ? 'aspect-square max-w-[270px] mx-auto' : deckCardSize === 'large' ? 'aspect-square max-w-[460px] mx-auto' : 'aspect-square max-w-[300px] sm:max-w-[320px] mx-auto'
-                    : deckAspectRatio === 'horizontal'
-                    ? deckCardSize === 'small' ? 'aspect-[16/10] max-w-[320px] min-h-[190px] mx-auto' : deckCardSize === 'large' ? 'aspect-[16/10] max-w-[500px] min-h-[300px] mx-auto' : 'aspect-[16/10] max-w-[350px] min-h-[210px] mx-auto'
-                    : deckCardSize === 'small' ? 'h-[310px] max-w-[280px] mx-auto' : deckCardSize === 'large' ? 'h-[500px] max-w-[440px] mx-auto' : 'h-[340px] sm:h-[360px] max-w-[320px] mx-auto'
-                }`}>
-                  <div 
-                    onClick={() => setPreviewFlipped(!previewFlipped)}
-                    className={`card-flipper relative w-full h-full transform-style-3d transition-transform duration-600 cursor-pointer select-none ${
-                      previewFlipped ? 'rotate-y-180' : ''
-                    }`}
-                  >
-                    {/* PREVIEW FRONT */}
-                    <div 
-                      className={`absolute inset-0 w-full h-full backface-hidden rounded-2xl border border-slate-200 shadow-md flex flex-col overflow-hidden ${
-                        deck.frontBgType === 'light-gray' ? 'bg-slate-100 text-slate-900' :
-                        deck.frontBgType === 'custom' ? '' : 'bg-white text-slate-900'
-                      }`}
-                      style={deck.frontBgType === 'custom' ? {
-                        backgroundColor: deck.frontCustomBgColor || '#ffffff',
-                        color: deck.frontCustomTextColor || '#0f172a'
-                      } : {}}
-                    >
-                      {frontIsRead ? (
-                        <ReadCardFace
-                          title={activeCard.title}
-                          text={activeCard.text}
-                          showPlayButton={activeCard.frontShowPlayButton !== false}
-                          audioUrl={activeCard.frontAudioUrl}
-                          readImageUrl={activeCard.frontReadImageUrl}
-                          isPreview={true}
-                        />
-                      ) : frontIsImage ? (
-                        <div className="w-full h-full overflow-hidden bg-slate-100">
-                          <img 
-                            src={activeCard.imageUrl} 
-                            alt="" 
-                            className="w-full h-full object-cover" 
-                            onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
-                          />
-                        </div>
-                      ) : frontIsImageText ? (
-                        <>
-                          <div className={`w-full ${
-                            deckAspectRatio === 'horizontal' 
-                              ? deckCardSize === 'small' ? 'h-20' : deckCardSize === 'large' ? 'h-36' : 'h-28'
-                              : deckCardSize === 'small' ? 'h-24' : deckCardSize === 'large' ? 'h-52' : 'h-36'
-                          } bg-slate-100 overflow-hidden shrink-0`}>
-                            <img 
-                              src={activeCard.imageUrl} 
-                              alt="" 
-                              className="w-full h-full object-cover" 
-                              onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
-                            />
-                          </div>
-
-                          <div className={`flex flex-col justify-center flex-1 text-center overflow-y-auto ${deckCardSize === 'small' ? 'p-2.5' : deckCardSize === 'large' ? 'p-6' : 'p-4'}`}>
-                            {activeCard.title && (
-                              <h4 className={`font-extrabold text-current mb-1 leading-snug break-words max-w-xs mx-auto ${
-                                deckCardSize === 'small' ? 'text-sm sm:text-base' : deckCardSize === 'large' ? 'text-xl sm:text-2xl' : 'text-base sm:text-lg'
-                              }`}>
-                                {activeCard.title}
-                              </h4>
-                            )}
-                            {activeCard.text && activeCard.text !== activeCard.title && (
-                              <p className={`text-current opacity-85 leading-relaxed break-words max-w-xs mx-auto ${
-                                deckCardSize === 'small' ? 'text-[11px]' : deckCardSize === 'large' ? 'text-sm sm:text-base' : 'text-xs sm:text-sm'
-                              }`}>
-                                {activeCard.text}
-                              </p>
-                            )}
-                            {!activeCard.title && !activeCard.text && (
-                              <p className="text-current opacity-50 text-xs italic">Título & Texto da Frente</p>
-                            )}
-                          </div>
-                        </>
-                      ) : (
-                        <div className={`flex-1 w-full h-full flex flex-col items-center justify-center text-center ${
-                          deckCardSize === 'small' ? 'p-3' : deckCardSize === 'large' ? 'p-8' : 'p-6'
-                        }`}>
-                          {activeCard.title && (
-                            <h4 className={`font-extrabold text-current mb-2 leading-snug break-words max-w-xs ${
-                              deckCardSize === 'small' ? 'text-sm sm:text-base' : deckCardSize === 'large' ? 'text-2xl sm:text-3xl' : 'text-lg sm:text-xl'
-                            }`}>
-                              {activeCard.title}
-                            </h4>
-                          )}
-                          <p className={`font-medium text-current opacity-90 leading-snug tracking-tight break-words max-w-xs ${
-                            deckCardSize === 'small' ? 'text-xs sm:text-sm' : deckCardSize === 'large' ? 'text-base sm:text-lg' : 'text-sm sm:text-base'
-                          }`}>
-                            {activeCard.text || (!activeCard.title ? 'Texto Curto do Card' : '')}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* PREVIEW BACK */}
-                    <div 
-                      className={`absolute inset-0 w-full h-full backface-hidden rotate-y-180 rounded-2xl border border-slate-200 shadow-md flex flex-col overflow-hidden ${
-                        deck.backBgType === 'white' ? 'bg-white text-slate-900' : 
-                        deck.backBgType === 'custom' ? '' : 'bg-slate-100 text-slate-900'
-                      }`}
-                      style={deck.backBgType === 'custom' ? {
-                        backgroundColor: deck.backCustomBgColor || '#f1f5f9',
-                        color: deck.backCustomTextColor || '#1e293b'
-                      } : {}}
-                    >
-                      {backIsRead ? (
-                        <ReadCardFace
-                          title={activeCard.backTitle}
-                          text={activeCard.backText}
-                          showPlayButton={activeCard.backShowPlayButton !== false}
-                          audioUrl={activeCard.backAudioUrl}
-                          readImageUrl={activeCard.backReadImageUrl}
-                          isPreview={true}
-                        />
-                      ) : backIsImage ? (
-                        <div className="w-full h-full overflow-hidden bg-slate-100">
-                          <img 
-                            src={activeCard.backImageUrl} 
-                            alt="" 
-                            className="w-full h-full object-cover" 
-                          />
-                        </div>
-                      ) : backIsImageText ? (
-                        <>
-                          <div className={`w-full ${
-                            deckAspectRatio === 'horizontal'
-                              ? deckCardSize === 'small' ? 'h-18' : deckCardSize === 'large' ? 'h-32' : 'h-24'
-                              : deckCardSize === 'small' ? 'h-20' : deckCardSize === 'large' ? 'h-44' : 'h-32'
-                          } bg-slate-200 overflow-hidden shrink-0`}>
-                            <img 
-                              src={activeCard.backImageUrl} 
-                              alt="" 
-                              className="w-full h-full object-cover" 
-                            />
-                          </div>
-
-                          <div className={`flex flex-col justify-center flex-1 text-center overflow-y-auto ${deckCardSize === 'small' ? 'p-2.5' : deckCardSize === 'large' ? 'p-6' : 'p-4'}`}>
-                            {activeCard.backTitle && (
-                              <h4 className={`font-extrabold text-current mb-1 leading-snug break-words max-w-xs mx-auto ${
-                                deckCardSize === 'small' ? 'text-sm sm:text-base' : deckCardSize === 'large' ? 'text-xl sm:text-2xl' : 'text-base sm:text-lg'
-                              }`}>
-                                {activeCard.backTitle}
-                              </h4>
-                            )}
-                            {activeCard.backText && activeCard.backText !== activeCard.backTitle && (
-                              <div className={`text-current opacity-90 leading-relaxed text-center max-w-xs mx-auto font-medium ${
-                                deckCardSize === 'small' ? 'text-[11px]' : deckCardSize === 'large' ? 'text-sm sm:text-base' : 'text-xs sm:text-sm'
-                              }`}>
-                                {activeCard.backText}
-                              </div>
-                            )}
-                            {!activeCard.backTitle && !activeCard.backText && (
-                              <p className="text-current opacity-60 text-xs italic">Título & Texto do Verso</p>
-                            )}
-                          </div>
-                        </>
-                      ) : (
-                        <div className={`flex-1 w-full h-full flex flex-col items-center justify-center text-center ${
-                          deckCardSize === 'small' ? 'p-3' : deckCardSize === 'large' ? 'p-8' : 'p-6'
-                        }`}>
-                          {activeCard.backTitle && (
-                            <h4 className={`font-extrabold text-current mb-2 leading-snug break-words max-w-xs ${
-                              deckCardSize === 'small' ? 'text-sm sm:text-base' : deckCardSize === 'large' ? 'text-2xl sm:text-3xl' : 'text-lg sm:text-xl'
-                            }`}>
-                              {activeCard.backTitle}
-                            </h4>
-                          )}
-                          <p className={`font-medium text-current opacity-90 leading-snug tracking-tight break-words max-w-xs ${
-                            deckCardSize === 'small' ? 'text-xs sm:text-sm' : deckCardSize === 'large' ? 'text-base sm:text-lg' : 'text-sm sm:text-base'
-                          }`}>
-                            {activeCard.backText || (!activeCard.backTitle ? 'Resposta Curta' : '')}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                  </div>
-                </div>
-              );
-            })()}
-
-            <p className="text-[11px] text-slate-400 text-center mt-3">
-              Clique no card acima para testar o giro 3D em tempo real.
-            </p>
           </div>
 
         </div>

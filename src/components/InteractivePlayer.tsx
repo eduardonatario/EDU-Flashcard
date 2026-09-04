@@ -215,6 +215,7 @@ export const InteractivePlayer: React.FC<InteractivePlayerProps> = ({
                               src={info.embedUrl}
                               className="w-full h-full border-0 absolute inset-0"
                               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                              referrerPolicy="strict-origin-when-cross-origin"
                               allowFullScreen
                               title="Card Video Front"
                             />
@@ -231,17 +232,30 @@ export const InteractivePlayer: React.FC<InteractivePlayerProps> = ({
                     </div>
                   ) : frontIsImage ? (
                     /* IMAGE ONLY FRONT */
-                    <div className="w-full h-full overflow-hidden">
+                    <div className="w-full h-full overflow-hidden relative">
                       <img 
                         src={card.imageUrl} 
                         alt={card.imageAlt || card.title || 'Imagem Frente'}
                         className="w-full h-full object-cover"
                         loading="lazy"
                       />
+                      {card.frontAudioEnabled === true && (
+                        <ReadCardFace
+                          title={card.title || card.imageAlt || 'Imagem'}
+                          text={card.text}
+                          autoplay={card.frontReadAutoplay !== false}
+                          lang={card.frontReadLang || 'pt-BR'}
+                          showPlayButton={card.frontShowPlayButton !== false}
+                          audioUrl={card.frontAudioUrl || ''}
+                          isActiveFace={!isFlipped}
+                          audioOnly={true}
+                          isPreview={false}
+                        />
+                      )}
                     </div>
                   ) : frontIsImageText ? (
                     /* IMAGE + TEXT FRONT */
-                    <div className="flex-1 flex flex-col overflow-hidden">
+                    <div className="flex-1 flex flex-col overflow-hidden relative">
                       <div className={`w-full ${getFrontImgHeightClass()} bg-slate-100 overflow-hidden relative shrink-0`}>
                         <img 
                           src={card.imageUrl} 
@@ -269,10 +283,23 @@ export const InteractivePlayer: React.FC<InteractivePlayerProps> = ({
                           </p>
                         )}
                       </div>
+                      {card.frontAudioEnabled === true && (
+                        <ReadCardFace
+                          title={card.title}
+                          text={card.text}
+                          autoplay={card.frontReadAutoplay !== false}
+                          lang={card.frontReadLang || 'pt-BR'}
+                          showPlayButton={card.frontShowPlayButton !== false}
+                          audioUrl={card.frontAudioUrl || ''}
+                          isActiveFace={!isFlipped}
+                          audioOnly={true}
+                          isPreview={false}
+                        />
+                      )}
                     </div>
                   ) : (
                     /* TEXT ONLY FRONT */
-                    <div className={`flex-1 w-full h-full flex flex-col items-center justify-center text-center ${
+                    <div className={`flex-1 w-full h-full flex flex-col items-center justify-center text-center relative ${
                       isSingleLarge ? 'p-8 sm:p-14 lg:p-20' : cardSize === 'small' ? 'p-4' : cardSize === 'large' ? 'p-10 sm:p-14' : 'p-6 sm:p-7'
                     }`}>
                       {card.title && (
@@ -295,6 +322,19 @@ export const InteractivePlayer: React.FC<InteractivePlayerProps> = ({
                         }`}>
                           Texto do Card
                         </p>
+                      )}
+                      {card.frontAudioEnabled === true && (
+                        <ReadCardFace
+                          title={card.title}
+                          text={card.text}
+                          autoplay={card.frontReadAutoplay !== false}
+                          lang={card.frontReadLang || 'pt-BR'}
+                          showPlayButton={card.frontShowPlayButton !== false}
+                          audioUrl={card.frontAudioUrl || ''}
+                          isActiveFace={!isFlipped}
+                          audioOnly={true}
+                          isPreview={false}
+                        />
                       )}
                     </div>
                   )}
@@ -334,6 +374,7 @@ export const InteractivePlayer: React.FC<InteractivePlayerProps> = ({
                               src={info.embedUrl}
                               className="w-full h-full border-0 absolute inset-0"
                               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                              referrerPolicy="strict-origin-when-cross-origin"
                               allowFullScreen
                               title="Card Video Back"
                             />
@@ -350,17 +391,30 @@ export const InteractivePlayer: React.FC<InteractivePlayerProps> = ({
                     </div>
                   ) : backIsImage ? (
                     /* IMAGE ONLY BACK */
-                    <div className="w-full h-full overflow-hidden">
+                    <div className="w-full h-full overflow-hidden relative">
                       <img 
                         src={card.backImageUrl} 
                         alt={card.backTitle || 'Verso'}
                         className="w-full h-full object-cover"
                         loading="lazy"
                       />
+                      {card.backAudioEnabled === true && (
+                        <ReadCardFace
+                          title={card.backTitle || 'Verso'}
+                          text={card.backText}
+                          autoplay={card.backReadAutoplay !== false}
+                          lang={card.backReadLang || 'pt-BR'}
+                          showPlayButton={card.backShowPlayButton !== false}
+                          audioUrl={card.backAudioUrl || ''}
+                          isActiveFace={isFlipped}
+                          audioOnly={true}
+                          isPreview={false}
+                        />
+                      )}
                     </div>
                   ) : backIsImageText ? (
                     /* IMAGE + TEXT BACK */
-                    <div className="flex-1 flex flex-col overflow-hidden">
+                    <div className="flex-1 flex flex-col overflow-hidden relative">
                       <div className={`w-full ${getBackImgHeightClass()} bg-slate-200 overflow-hidden relative shrink-0`}>
                         <img 
                           src={card.backImageUrl} 
@@ -388,10 +442,23 @@ export const InteractivePlayer: React.FC<InteractivePlayerProps> = ({
                           </div>
                         )}
                       </div>
+                      {card.backAudioEnabled === true && (
+                        <ReadCardFace
+                          title={card.backTitle}
+                          text={card.backText}
+                          autoplay={card.backReadAutoplay !== false}
+                          lang={card.backReadLang || 'pt-BR'}
+                          showPlayButton={card.backShowPlayButton !== false}
+                          audioUrl={card.backAudioUrl || ''}
+                          isActiveFace={isFlipped}
+                          audioOnly={true}
+                          isPreview={false}
+                        />
+                      )}
                     </div>
                   ) : (
                     /* TEXT ONLY BACK */
-                    <div className={`flex-1 w-full h-full flex flex-col items-center justify-center text-center ${
+                    <div className={`flex-1 w-full h-full flex flex-col items-center justify-center text-center relative ${
                       isSingleLarge ? 'p-8 sm:p-14 lg:p-20' : cardSize === 'small' ? 'p-4' : cardSize === 'large' ? 'p-10 sm:p-14' : 'p-6 sm:p-7'
                     }`}>
                       {card.backTitle && (
@@ -414,6 +481,19 @@ export const InteractivePlayer: React.FC<InteractivePlayerProps> = ({
                         }`}>
                           Resposta
                         </p>
+                      )}
+                      {card.backAudioEnabled === true && (
+                        <ReadCardFace
+                          title={card.backTitle}
+                          text={card.backText}
+                          autoplay={card.backReadAutoplay !== false}
+                          lang={card.backReadLang || 'pt-BR'}
+                          showPlayButton={card.backShowPlayButton !== false}
+                          audioUrl={card.backAudioUrl || ''}
+                          isActiveFace={isFlipped}
+                          audioOnly={true}
+                          isPreview={false}
+                        />
                       )}
                     </div>
                   )}

@@ -11,40 +11,65 @@ import { InteractivePlayer } from './components/InteractivePlayer';
 import { CardEditor } from './components/CardEditor';
 import { NewDeckModal } from './components/NewDeckModal';
 
-const STORAGE_KEY = 'rise_flashcards_decks_v2';
-const CURRENT_DECK_KEY = 'rise_flashcards_current_id_v2';
+const STORAGE_KEY = 'rise_flashcards_decks_v3';
+const CURRENT_DECK_KEY = 'rise_flashcards_current_id_v3';
+
+const ABSTRACT_IMAGES = [
+  'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1618005198919-d3d4b5a92ead?auto=format&fit=crop&w=800&q=80'
+];
 
 function migrateDecks(loadedDecks: Deck[]): Deck[] {
-  const replaceText = (txt: string | undefined): string => {
-    if (!txt) return '';
-    const trimmed = txt.trim();
-    if (
-      trimmed === "Você recebe um e-mail urgente pedindo para você clicar em um link e redefinir sua senha corporativa imediatamente. O que você deve fazer?" || 
-      trimmed === "Nunca clique no link! Verifique o remetente real (@domínio), não insira credenciais e reporte o e-mail suspeito imediatamente ao canal oficial de segurança."
-    ) {
-      return "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean varius augue eget leo mattis aliquam.";
-    }
-    if (
-      trimmed === "Identificação de Phishing (Cópia) (Cópia)" || 
-      trimmed === "Nunca clique no link!"
-    ) {
-      return "Lorem ipsum dolor sit amet,";
-    }
-    return txt;
+  const isDefaultOrOldTitle = (t: string | undefined): boolean => {
+    if (!t) return true;
+    const trimmed = t.trim();
+    return [
+      'O que é Phishing?',
+      'Identificação Visual',
+      'Autenticação Multifator (MFA)',
+      'Titulo frente',
+      'Pergunta ou Título do Card',
+      'Lorem ipsum dolor sit amet,',
+      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean varius augue eget leo mattis aliquam.'
+    ].includes(trimmed);
+  };
+
+  const isDefaultOrOldText = (t: string | undefined): boolean => {
+    if (!t) return true;
+    const trimmed = t.trim();
+    return [
+      'O que é Phishing?',
+      'Identifique o alerta de segurança',
+      'Qual é o principal benefício do MFA nos acessos corporativos?',
+      'Frente do Flashcard',
+      'Insira o contexto, pergunta ou situação problema que o colaborador deve analisar.',
+      'Lorem ipsum dolor sit amet,',
+      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean varius augue eget leo mattis aliquam.',
+      'Você recebe um e-mail urgente pedindo para você clicar em um link e redefinir sua senha corporativa imediatamente. O que você deve fazer?'
+    ].includes(trimmed);
   };
 
   return loadedDecks.map(deck => {
-    const updatedCards = deck.cards.map(card => {
+    const updatedCards = deck.cards.map((card, idx) => {
       const frontType = card.frontContentType || (card.imageUrl ? 'image-text' : 'text');
       const backType = card.backContentType || (card.backImageUrl ? 'image-text' : 'text');
+
+      let imageUrl = card.imageUrl;
+      let frontContentType = frontType;
+      if (deck.id === 'deck-principal' && idx < 3) {
+        imageUrl = ABSTRACT_IMAGES[idx];
+        frontContentType = 'image-text';
+      }
+
       return {
         ...card,
-        frontContentType: frontType,
+        frontContentType,
+        imageUrl,
         backContentType: backType,
-        title: replaceText(card.title),
-        text: replaceText(card.text),
-        backTitle: replaceText(card.backTitle),
-        backText: replaceText(card.backText),
+        title: isDefaultOrOldTitle(card.title) || card.title === 'Título do card' ? `Título do card ${idx + 1}` : card.title,
+        text: isDefaultOrOldText(card.text) ? 'Texto do card' : card.text,
+        backText: (card.backText === 'Verso do Flashcard' || !card.backText) ? `Verso do Flashcard ${idx + 1}` : card.backText,
       };
     });
 
@@ -52,8 +77,6 @@ function migrateDecks(loadedDecks: Deck[]): Deck[] {
       ...deck,
       frontBgType: deck.frontBgType || 'white',
       backBgType: deck.backBgType || 'white',
-      title: replaceText(deck.title),
-      description: replaceText(deck.description),
       cards: updatedCards,
     };
   });
@@ -62,9 +85,16 @@ function migrateDecks(loadedDecks: Deck[]): Deck[] {
 export default function App() {
   const [decks, setDecks] = useState<Deck[]>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
+      const savedV3 = localStorage.getItem(STORAGE_KEY);
+      if (savedV3) {
+        const parsed = JSON.parse(savedV3);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return migrateDecks(parsed);
+        }
+      }
+      const savedV2 = localStorage.getItem('rise_flashcards_decks_v2');
+      if (savedV2) {
+        const parsed = JSON.parse(savedV2);
         if (Array.isArray(parsed) && parsed.length > 0) {
           return migrateDecks(parsed);
         }

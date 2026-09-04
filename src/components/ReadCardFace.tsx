@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Play } from 'lucide-react';
+import { Play, Square } from 'lucide-react';
 
 export const ReadCardFace: React.FC<{
   title?: string;
@@ -11,9 +11,10 @@ export const ReadCardFace: React.FC<{
   isActiveFace?: boolean;
   readImageUrl?: string;
   isPreview?: boolean;
-}> = ({ title, text, autoplay = true, lang = 'pt-BR', showPlayButton = true, audioUrl, isActiveFace = true, readImageUrl, isPreview = false }) => {
+  audioOnly?: boolean;
+}> = ({ title, text, autoplay = true, lang = 'pt-BR', showPlayButton = true, audioUrl, isActiveFace = true, readImageUrl, isPreview = false, audioOnly = false }) => {
   const [isPlaying, setIsPlaying] = useState(false);
-  const fullText = [title, text].filter(Boolean).join('. ');
+  const fullText = title === text ? (title || '') : [title, text].filter(Boolean).join('. ');
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
 
   const stopAudio = () => {
@@ -28,10 +29,9 @@ export const ReadCardFace: React.FC<{
     setIsPlaying(false);
   };
 
-  const startAudio = () => {
-    if (isPreview) return;
+  const startAudio = (manual: boolean = false) => {
     stopAudio();
-    if (!isActiveFace) return;
+    if (!isActiveFace && !manual && !isPreview) return;
     setIsPlaying(true);
 
     if (audioUrl) {
@@ -41,6 +41,7 @@ export const ReadCardFace: React.FC<{
       audio.onerror = () => setIsPlaying(false);
       audio.play().catch(() => setIsPlaying(false));
     } else if (fullText && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(fullText);
       utterance.lang = lang;
       utterance.onend = () => setIsPlaying(false);
@@ -52,10 +53,9 @@ export const ReadCardFace: React.FC<{
   };
 
   React.useEffect(() => {
-    if (isPreview) return;
-    if (autoplay && isActiveFace) {
+    if (autoplay && (isActiveFace || isPreview)) {
       const t = setTimeout(() => {
-        startAudio();
+        startAudio(false);
       }, 400);
       return () => {
         clearTimeout(t);
@@ -71,16 +71,33 @@ export const ReadCardFace: React.FC<{
 
   const togglePlay = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (isPreview) {
-      setIsPlaying(!isPlaying);
-      return;
-    }
     if (isPlaying) {
       stopAudio();
     } else {
-      startAudio();
+      startAudio(true);
     }
   };
+
+  if (audioOnly) {
+    return (
+      <div className="absolute top-4 right-4 z-20" onClick={(e) => e.stopPropagation()}>
+        {showPlayButton !== false && (
+          <button
+            type="button"
+            onClick={togglePlay}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-xs bg-slate-200 text-slate-700 hover:bg-slate-300"
+          >
+            {isPlaying ? (
+              <Square className="w-3 h-3 fill-current" />
+            ) : (
+              <Play className="w-3.5 h-3.5 fill-current" />
+            )}
+            {isPlaying ? 'Stop' : 'Play'}
+          </button>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 w-full h-full flex flex-col items-center justify-center text-center p-6 sm:p-8 relative select-none">
@@ -103,7 +120,7 @@ export const ReadCardFace: React.FC<{
           }`}
         >
           {isPlaying ? (
-            <span className="w-3 h-3 bg-slate-700 rounded-2xs inline-block animate-pulse" />
+            <Square className="w-3 h-3 fill-current" />
           ) : (
             <Play className="w-3.5 h-3.5 fill-current" />
           )}

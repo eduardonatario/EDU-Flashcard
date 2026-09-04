@@ -20,12 +20,14 @@ export interface Flashcard {
   frontReadLang?: 'pt-BR' | 'en-US';
   frontShowPlayButton?: boolean;
   frontAudioUrl?: string;
+  frontAudioEnabled?: boolean;
   frontReadImageUrl?: string;
   backContentType?: 'text' | 'image' | 'image-text' | 'video' | 'read';
   backReadAutoplay?: boolean;
   backReadLang?: 'pt-BR' | 'en-US';
   backShowPlayButton?: boolean;
   backAudioUrl?: string;
+  backAudioEnabled?: boolean;
   backReadImageUrl?: string;
 }
 
