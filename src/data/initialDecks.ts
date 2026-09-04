@@ -32,7 +32,7 @@ export const INITIAL_DECKS: Deck[] = [
         imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80',
         imageAlt: 'Imagem abstrata 1',
         imagePosition: 'top',
-        backTitle: 'Definição',
+        backTitle: 'Título verso',
         backText: 'Verso do Flashcard 1',
         backContentType: 'text'
       },
@@ -45,7 +45,7 @@ export const INITIAL_DECKS: Deck[] = [
         imageUrl: 'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?auto=format&fit=crop&w=800&q=80',
         imageAlt: 'Imagem abstrata 2',
         imagePosition: 'top',
-        backTitle: 'Resposta',
+        backTitle: 'Título verso',
         backText: 'Verso do Flashcard 2',
         backContentType: 'text'
       },
@@ -58,7 +58,7 @@ export const INITIAL_DECKS: Deck[] = [
         imageUrl: 'https://images.unsplash.com/photo-1618005198919-d3d4b5a92ead?auto=format&fit=crop&w=800&q=80',
         imageAlt: 'Imagem abstrata 3',
         imagePosition: 'top',
-        backTitle: 'Camada Extra de Proteção',
+        backTitle: 'Título verso',
         backText: 'Verso do Flashcard 3',
         backContentType: 'text'
       }
